@@ -1,13 +1,15 @@
-// Shoot Them Up Game, All Rights Reserved.
+ // Shoot Them Up Game, All Rights Reserved.
 
 #include "Player/STUBaseCharacter.h"
 #include "Camera/CameraComponent.h"
 #include "Components/InputComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Components/STUCharacterMovementComponent.h"
 
 // Sets default values
-ASTUBaseCharacter::ASTUBaseCharacter()
-{
+ ASTUBaseCharacter::ASTUBaseCharacter(const FObjectInitializer& ObjInit)
+     : Super(ObjInit.SetDefaultSubobjectClass<USTUCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
+ {
     // Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
     PrimaryActorTick.bCanEverTick = true;
 

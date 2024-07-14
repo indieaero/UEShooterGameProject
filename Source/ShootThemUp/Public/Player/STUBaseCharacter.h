@@ -16,7 +16,7 @@ class SHOOTTHEMUP_API ASTUBaseCharacter : public ACharacter
 
 public:
     // Sets default values for this character's properties
-    ASTUBaseCharacter();
+    ASTUBaseCharacter(const FObjectInitializer& ObjInit);
 
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
