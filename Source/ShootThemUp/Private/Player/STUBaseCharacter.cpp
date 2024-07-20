@@ -51,11 +51,13 @@ void ASTUBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 void ASTUBaseCharacter::MoveForward(float Amount)
 {
     IsMovingForward = Amount > 0.0f;
+    if (Amount == 0.0f) return;
     AddMovementInput(GetActorForwardVector(), Amount);
 }
 
 void ASTUBaseCharacter::MoveRight(float Amount)
 {
+    if (Amount == 0.0f) return;
     AddMovementInput(GetActorRightVector(), Amount);
 }
 
@@ -73,3 +75,22 @@ bool ASTUBaseCharacter::IsRunning() const
 {
     return WantsToRun && IsMovingForward && !GetVelocity().IsZero();
 }
+
+ float ASTUBaseCharacter::GetMovementDirection() const
+ {
+     //If the speed is zero, return 0.0f since there is no movement
+     if (GetVelocity().IsZero()) return 0.0f;
+
+     //define the normalized velocity vector
+     const auto VelocityNormal = GetVelocity().GetSafeNormal();
+     //define variable for angle (scalar product) between GetActorForwardVector and VelocityNormal, return Radians
+     const auto AngleBetween = FMath::Acos(FVector::DotProduct(GetActorForwardVector(), VelocityNormal));
+     //define variable (vector product) to calculate vector product
+     const auto CrossProduct = FVector::CrossProduct(GetActorForwardVector(), VelocityNormal);
+     // Convert the angle from radians to degrees
+     const auto Degrees = FMath::RadiansToDegrees(AngleBetween);
+
+     // Return the angle in degrees multiplied by the sign of the Z component of the vector product,
+     // if the vector product is not zero; otherwise we return the angle in degrees without changing
+     return  CrossProduct.IsZero() ? Degrees : Degrees * FMath::Sign(CrossProduct.Z);
+ }
