@@ -22,6 +22,9 @@
     CameraComponent = CreateDefaultSubobject<UCameraComponent>("CameraComponent");
     CameraComponent->SetupAttachment(SpringArmComponent);
 
+    CameraComponent2 = CreateDefaultSubobject<UCameraComponent>("CameraComponent2");
+    CameraComponent2->SetupAttachment(GetRootComponent());
+
     //Create Health component in constructor of STUBaseCharacter
     HealthComponent = CreateDefaultSubobject<USTUHealthComponent>("HealthComponent");
 

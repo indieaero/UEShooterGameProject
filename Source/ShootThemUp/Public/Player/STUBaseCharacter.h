@@ -27,6 +27,9 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
     UCameraComponent* CameraComponent;
 
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+    UCameraComponent* CameraComponent2;
+
     //Create Health property for BaseCharacter using pointer to USTUHealthComponent that's we created
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
     USTUHealthComponent* HealthComponent;
