@@ -5,8 +5,10 @@
 #include "Components/InputComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/STUCharacterMovementComponent.h"
+#include "Components/STUHealthComponent.h"
+#include "Components/TextRenderComponent.h"
 
-// Sets default values
+//Sets default values in constructor 
  ASTUBaseCharacter::ASTUBaseCharacter(const FObjectInitializer& ObjInit)
      : Super(ObjInit.SetDefaultSubobjectClass<USTUCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
  {
@@ -19,18 +21,33 @@
 
     CameraComponent = CreateDefaultSubobject<UCameraComponent>("CameraComponent");
     CameraComponent->SetupAttachment(SpringArmComponent);
-}
+
+    //Create Health component in constructor of STUBaseCharacter
+    HealthComponent = CreateDefaultSubobject<USTUHealthComponent>("HealthComponent");
+
+    HealthTextComponent = CreateDefaultSubobject<UTextRenderComponent>("HealthTextComponent");
+    HealthTextComponent->SetupAttachment(GetRootComponent());
+
+ }
 
 // Called when the game starts or when spawned
 void ASTUBaseCharacter::BeginPlay()
 {
     Super::BeginPlay();
+
+    //macros for check that Health Component and HealthTextComponent is not null (work only in Debug and Development builds)
+    check(HealthComponent);
+    check(HealthTextComponent);
 }
 
 // Called every frame
 void ASTUBaseCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
+    // Get the current health value from the health component
+    const float Health = HealthComponent->GetHealth();
+    // Update the text component with the current health value
+    HealthTextComponent->SetText(FText::FromString(FString::Printf(TEXT("%.0f"), Health)));
 }
 
 // Called to bind functionality to input
