@@ -23,7 +23,7 @@
     CameraComponent->SetupAttachment(SpringArmComponent);
 
     CameraComponent2 = CreateDefaultSubobject<UCameraComponent>("CameraComponent2");
-    CameraComponent2->SetupAttachment(GetRootComponent());
+    CameraComponent2->SetupAttachment(SpringArmComponent);
 
     //Create Health component in constructor of STUBaseCharacter
     HealthComponent = CreateDefaultSubobject<USTUHealthComponent>("HealthComponent");
@@ -91,7 +91,7 @@ void ASTUBaseCharacter::OnStopRunning()
     WantsToRun = false;
 }
 
-bool ASTUBaseCharacter::IsRunning() const
+ bool ASTUBaseCharacter::IsRunning() const
 {
     return WantsToRun && IsMovingForward && !GetVelocity().IsZero();
 }
