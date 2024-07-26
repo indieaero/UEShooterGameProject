@@ -7,6 +7,10 @@
 #include "Components/STUCharacterMovementComponent.h"
 #include "Components/STUHealthComponent.h"
 #include "Components/TextRenderComponent.h"
+#include "Engine/DamageEvents.h"
+
+//TODO: read about define log category
+DEFINE_LOG_CATEGORY_STATIC(BaseCharacterLog, All, All);
 
 //Sets default values in constructor 
  ASTUBaseCharacter::ASTUBaseCharacter(const FObjectInitializer& ObjInit)
@@ -51,6 +55,13 @@ void ASTUBaseCharacter::Tick(float DeltaTime)
     const float Health = HealthComponent->GetHealth();
     // Update the text component with the current health value
     HealthTextComponent->SetText(FText::FromString(FString::Printf(TEXT("%.0f"), Health)));
+
+    // UE function that provide damage:
+    // first argument - is amount of damage,
+    // second - is when and what's circumstances,
+    // third - pointer to the character controller that deals damage
+    // the last - this is a pointer to the actor who is responsible for the damage (grenade, bullet)
+    TakeDamage(0.1f, FDamageEvent{}, Controller, this);
 }
 
 // Called to bind functionality to input
