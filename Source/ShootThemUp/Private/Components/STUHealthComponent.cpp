@@ -1,6 +1,9 @@
 // Shoot Them Up Game, All Rights Reserved.
 
 #include "Components/STUHealthComponent.h"
+#include "GameFramework/Actor.h"
+
+DEFINE_LOG_CATEGORY_STATIC(logHealthComponent, All, All)
 
 //Sets default values for this component's properties
 USTUHealthComponent::USTUHealthComponent()
@@ -27,4 +30,5 @@ void USTUHealthComponent::BeginPlay()
      AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
 {
      Health -= Damage;
+    UE_LOG(logHealthComponent, Display, TEXT("Damage: %f"), Damage);
 }
