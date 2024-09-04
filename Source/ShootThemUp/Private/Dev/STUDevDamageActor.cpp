@@ -31,6 +31,6 @@ void ASTUDevDamageActor::Tick(float DeltaTime)
 
     //Call function from GameplayStatics that apply damage to all actors every tick
     UGameplayStatics::ApplyRadialDamage(GetWorld(), Damage, GetActorLocation(), Radius, 
-        nullptr, {}, this, nullptr, DoFullDamage);
+        DamageType, {}, this, nullptr, DoFullDamage);
 }
 
