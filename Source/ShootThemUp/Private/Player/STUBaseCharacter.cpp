@@ -7,7 +7,6 @@
 #include "Components/STUCharacterMovementComponent.h"
 #include "Components/STUHealthComponent.h"
 #include "Components/TextRenderComponent.h"
-#include "Engine/DamageEvents.h"
 
 //TODO: read about define log category
 DEFINE_LOG_CATEGORY_STATIC(BaseCharacterLog, All, All);
@@ -45,16 +44,26 @@ void ASTUBaseCharacter::BeginPlay()
     //macros for check that Health Component and HealthTextComponent is not null (work only in Debug and Development builds)
     check(HealthComponent);
     check(HealthTextComponent);
+    check(GetCharacterMovement());
+
+    OnHealthChanged(HealthComponent->GetHealth());
+    HealthComponent->OnDeath.AddUObject(this, &ASTUBaseCharacter::OnDeath);
+
+    //Bind a new function to the OnHealthChanged delegate and update the text component only when the value actually changes, not every frame
+    HealthComponent->OnHealthChanged.AddUObject(this, &ASTUBaseCharacter::OnHealthChanged);
+
+}
+
+void ASTUBaseCharacter::OnHealthChanged(float Health)
+{
+    // Update the text component with the current health value
+    HealthTextComponent->SetText(FText::FromString(FString::Printf(TEXT("%.0f"), Health)));
 }
 
 // Called every frame
 void ASTUBaseCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-    // Get the current health value from the health component
-    const float Health = HealthComponent->GetHealth();
-    // Update the text component with the current health value
-    HealthTextComponent->SetText(FText::FromString(FString::Printf(TEXT("%.0f"), Health)));
 }
 
 // Called to bind functionality to input
@@ -117,4 +126,15 @@ void ASTUBaseCharacter::OnStopRunning()
      // Return the angle in degrees multiplied by the sign of the Z component of the vector product,
      // if the vector product is not zero; otherwise we return the angle in degrees without changing
      return  CrossProduct.IsZero() ? Degrees : Degrees * FMath::Sign(CrossProduct.Z);
+ }
+
+void ASTUBaseCharacter::OnDeath()
+ {
+    UE_LOG(BaseCharacterLog, Display, TEXT("Player %s is dead"), *GetName());
+
+    PlayAnimMontage(DeathAnimMontage);
+
+    GetCharacterMovement()->DisableMovement();
+
+    SetLifeSpan(5.0f);
  }

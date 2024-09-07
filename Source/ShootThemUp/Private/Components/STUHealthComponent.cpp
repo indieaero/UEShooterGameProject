@@ -17,6 +17,7 @@ void USTUHealthComponent::BeginPlay()
 
     // Every time when game is start
     Health = MaxHealth;
+    OnHealthChanged.Broadcast(Health);
 
     // Each component has a get owner function that returns a pointer to the owner of this component
     AActor* ComponentOwner = GetOwner();
@@ -26,12 +27,15 @@ void USTUHealthComponent::BeginPlay()
     }
 }
 
- void USTUHealthComponent::OnTakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
+ void USTUHealthComponent::OnTakeAnyDamage(
+    AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
 {
     if (Damage <= 0.0f || IsDead()) return;
     Health = FMath::Clamp(Health - Damage, 0.0f, MaxHealth);
+    OnHealthChanged.Broadcast(Health);
 
-    if (IsDead)
+    if (IsDead())
     {
         OnDeath.Broadcast();
     }
+}
