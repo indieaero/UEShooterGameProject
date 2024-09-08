@@ -7,10 +7,11 @@
 #include "Components/STUCharacterMovementComponent.h"
 #include "Components/STUHealthComponent.h"
 #include "Components/TextRenderComponent.h"
+#include "Engine/DamageEvents.h"
 #include "GameFramework/Controller.h"
 
 //TODO: read about define log category
-DEFINE_LOG_CATEGORY_STATIC(BaseCharacterLog, All, All);
+DEFINE_LOG_CATEGORY_STATIC(LogBaseCharacter, All, All);
 
 //Sets default values in constructor 
  ASTUBaseCharacter::ASTUBaseCharacter(const FObjectInitializer& ObjInit)
@@ -53,6 +54,8 @@ void ASTUBaseCharacter::BeginPlay()
     //Bind a new function to the OnHealthChanged delegate and update the text component only when the value actually changes, not every frame
     HealthComponent->OnHealthChanged.AddUObject(this, &ASTUBaseCharacter::OnHealthChanged);
 
+    LandedDelegate.AddDynamic(this, &ASTUBaseCharacter::OnGroundLanded);
+
 }
 
 void ASTUBaseCharacter::OnHealthChanged(float Health)
@@ -61,7 +64,20 @@ void ASTUBaseCharacter::OnHealthChanged(float Health)
     HealthTextComponent->SetText(FText::FromString(FString::Printf(TEXT("%.0f"), Health)));
 }
 
-// Called every frame
+ void ASTUBaseCharacter::OnGroundLanded(const FHitResult& Hit)
+ {
+     const auto FallVelocityZ = -GetVelocity().Z;
+     UE_LOG(LogBaseCharacter, Display, TEXT("On landed: %f"), FallVelocityZ);
+
+     if (FallVelocityZ < LandedDamageVelocity.X) return;
+
+     const auto FinalDamage = FMath::GetMappedRangeValueClamped(LandedDamageVelocity, LandedDamage, FallVelocityZ);
+     UE_LOG(LogBaseCharacter, Display, TEXT("FinalDamgae: %f"), FinalDamage);
+     TakeDamage(FinalDamage, FDamageEvent{}, nullptr, nullptr);
+
+ }
+
+ // Called every frame
 void ASTUBaseCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
@@ -71,6 +87,7 @@ void ASTUBaseCharacter::Tick(float DeltaTime)
 void ASTUBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
     Super::SetupPlayerInputComponent(PlayerInputComponent);
+    check(PlayerInputComponent);
 
     PlayerInputComponent->BindAxis("MoveForward", this, &ASTUBaseCharacter::MoveForward);
     PlayerInputComponent->BindAxis("MoveRight", this, &ASTUBaseCharacter::MoveRight);
@@ -131,13 +148,13 @@ void ASTUBaseCharacter::OnStopRunning()
 
 void ASTUBaseCharacter::OnDeath()
  {
-    UE_LOG(BaseCharacterLog, Display, TEXT("Player %s is dead"), *GetName());
+    UE_LOG(LogBaseCharacter, Display, TEXT("Player %s is dead"), *GetName());
 
     PlayAnimMontage(DeathAnimMontage);
 
     GetCharacterMovement()->DisableMovement();
 
-    SetLifeSpan(5.0f);
+    SetLifeSpan(LifeSpanOnDeath);
 
     if (Controller)
     {
