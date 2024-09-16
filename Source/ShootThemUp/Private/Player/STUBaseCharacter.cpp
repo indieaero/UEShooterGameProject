@@ -1,4 +1,4 @@
- // Shoot Them Up Game, All Rights Reserved.
+ // Shoot Them Up Game, All* Rights Reserved.
 
 #include "Player/STUBaseCharacter.h"
 #include "Camera/CameraComponent.h"
@@ -9,6 +9,7 @@
 #include "Components/TextRenderComponent.h"
 #include "Engine/DamageEvents.h"
 #include "GameFramework/Controller.h"
+#include "Weapon/STUBaseWeapon.h"
 
 //TODO: read about define log category
 DEFINE_LOG_CATEGORY_STATIC(LogBaseCharacter, All, All);
@@ -56,6 +57,7 @@ void ASTUBaseCharacter::BeginPlay()
 
     LandedDelegate.AddDynamic(this, &ASTUBaseCharacter::OnGroundLanded);
 
+     SpawnWeapon();
 }
 
 void ASTUBaseCharacter::OnHealthChanged(float Health)
@@ -160,4 +162,19 @@ void ASTUBaseCharacter::OnDeath()
     {
         Controller->ChangeState(NAME_Spectating);
     }
+ }
+
+ void ASTUBaseCharacter::SpawnWeapon()
+ {
+     if (!GetWorld()) return;
+
+     //Spawn WeaponClass using GetWorld
+     const auto Weapon = GetWorld()->SpawnActor<ASTUBaseWeapon>(WeaponClass);
+
+     if (Weapon)
+     {
+         FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, false);
+         Weapon ->AttachToComponent(GetMesh(), AttachmentRules, "WeaponSocket");
+     }
+
  }
