@@ -7,22 +7,29 @@ public class ShootThemUp : ModuleRules
 	public ShootThemUp(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
 
-		PrivateDependencyModuleNames.AddRange(new string[] {  });
+		PublicDependencyModuleNames.AddRange(new string[]
+		{
+			"Core",
+			"CoreUObject",
+			"Engine",
+			"InputCore"
+		});
+
+		PrivateDependencyModuleNames.AddRange(new string[] { });
 
 		PublicIncludePaths.AddRange(new string[]
 		{
-			"ShootThemUp/Public/Player", 
+			"ShootThemUp/Public/Player",
 			"ShootThemUp/Public/Components",
 			"ShootThemUp/Public/Dev",
-			"ShootThemUp/Public/Weapon"
+			"ShootThemUp/Public/Weapon",
+			"ShootThemUp/Public/UI"
 		});
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
-		
+
 		// Uncomment if you are using online features
 		// PrivateDependencyModuleNames.Add("OnlineSubsystem");
 
