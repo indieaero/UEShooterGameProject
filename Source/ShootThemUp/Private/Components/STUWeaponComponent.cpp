@@ -31,6 +31,8 @@ void USTUWeaponComponent::SpawnWeapon()
 
     FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, false);
     CurrentWeapon->AttachToComponent(Character->GetMesh(), AttachmentRules, WeaponAttachPointName);
+
+    CurrentWeapon->SetOwner(Character);
 }
 
 //Logic: Player presses Fire action -> calls Fire function in WeaponComponent -> calls Fire function of the weapon in the character's hands.
