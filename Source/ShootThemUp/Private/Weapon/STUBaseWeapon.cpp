@@ -9,10 +9,6 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/Controller.h"
 
-
-class USTUHealthComponent;
-class ASTUBaseCharacter;
-
 DEFINE_LOG_CATEGORY_STATIC(LogBaseWeapon, All, All);
 
 ASTUBaseWeapon::ASTUBaseWeapon()
@@ -42,25 +38,11 @@ void ASTUBaseWeapon::MakeShot()
     if (!GetTraceData(TraceStart, TraceEnd)) return;
 
     FHitResult HitResult;
-
     MakeHit(HitResult, TraceStart, TraceEnd);
-
-    AActor* HitActor = HitResult.GetActor();
-
-    if (HitActor)
-    {
-        USTUHealthComponent* HealthComponent = HitActor->FindComponentByClass<USTUHealthComponent>();
-        if (HealthComponent)
-        {
-            AController* InstigatingController = GetPlayerController();
-
-            FPointDamageEvent DamageEvent;
-            HitActor->TakeDamage(220.0f, DamageEvent, InstigatingController, this);
-        }
-    }
 
     if (HitResult.bBlockingHit)
     {
+        MakeDamage(HitResult);
         // Draw debug line from the TraceStart to the TraceEnd for visualization in the world.
         DrawDebugLine(GetWorld(), GetMuzzleWorldLocation(), HitResult.ImpactPoint, FColor::Red, false, 3.0f, 0, 3.0f);
 
@@ -126,4 +108,11 @@ void ASTUBaseWeapon::MakeHit(FHitResult& HitResult, const FVector& TraceStart, c
 
     // Perform a line trace to detect a hit along the shot path, using the LineTraceSingleByChannel
     GetWorld()->LineTraceSingleByChannel(HitResult, TraceStart, TraceEnd, ECollisionChannel::ECC_Visibility, CollisionParams);
+}
+
+void ASTUBaseWeapon::MakeDamage(const FHitResult& HitResult)
+{
+    const auto DamageActor = HitResult.GetActor();
+    if (!DamageActor) return;
+    DamageActor->TakeDamage(DamageAmount, FDamageEvent(), GetPlayerController(), this);
 }

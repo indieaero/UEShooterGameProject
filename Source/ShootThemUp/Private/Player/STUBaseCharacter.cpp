@@ -8,6 +8,7 @@
 #include "Components/STUHealthComponent.h"
 #include "Components/TextRenderComponent.h"
 #include "Components/STUWeaponComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Engine/DamageEvents.h"
 #include "GameFramework/Controller.h"
 
@@ -165,4 +166,7 @@ void ASTUBaseCharacter::OnDeath()
     {
         Controller->ChangeState(NAME_Spectating);
     }
+
+    //Disable capsule collision after death
+    GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
 }
