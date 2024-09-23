@@ -4,8 +4,14 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
+#include "STUHealthComponent.h"
+#include "Engine/DamageEvents.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/Controller.h"
+
+
+class USTUHealthComponent;
+class ASTUBaseCharacter;
 
 DEFINE_LOG_CATEGORY_STATIC(LogBaseWeapon, All, All);
 
@@ -38,6 +44,20 @@ void ASTUBaseWeapon::MakeShot()
     FHitResult HitResult;
 
     MakeHit(HitResult, TraceStart, TraceEnd);
+
+    AActor* HitActor = HitResult.GetActor();
+
+    if (HitActor)
+    {
+        USTUHealthComponent* HealthComponent = HitActor->FindComponentByClass<USTUHealthComponent>();
+        if (HealthComponent)
+        {
+            AController* InstigatingController = GetPlayerController();
+
+            FPointDamageEvent DamageEvent;
+            HitActor->TakeDamage(220.0f, DamageEvent, InstigatingController, this);
+        }
+    }
 
     if (HitResult.bBlockingHit)
     {
