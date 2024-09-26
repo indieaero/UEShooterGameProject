@@ -26,37 +26,17 @@ void ASTUBaseWeapon::BeginPlay()
 
 void ASTUBaseWeapon::StartFire()
 {
-    MakeShot();
-    GetWorldTimerManager().SetTimer(ShotTimerHandle, this, &ASTUBaseWeapon::MakeShot, TimeBetweenShots, true);
+
 }
 
 void ASTUBaseWeapon::StopFire()
 {
-    GetWorldTimerManager().ClearTimer(ShotTimerHandle);
+
 }
 
 void ASTUBaseWeapon::MakeShot()
 {
-    if (!GetWorld()) return;
 
-    FVector TraceStart, TraceEnd;
-    if (!GetTraceData(TraceStart, TraceEnd)) return;
-
-    FHitResult HitResult;
-    MakeHit(HitResult, TraceStart, TraceEnd);
-
-    if (HitResult.bBlockingHit)
-    {
-        MakeDamage(HitResult);
-        // Draw debug line from the TraceStart to the TraceEnd for visualization in the world.
-        DrawDebugLine(GetWorld(), GetMuzzleWorldLocation(), HitResult.ImpactPoint, FColor::Red, false, 3.0f, 0, 3.0f);
-
-        DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, 10.0f, 24, FColor::Red, false, 5.0f);
-    }
-    else
-    {
-        DrawDebugLine(GetWorld(), GetMuzzleWorldLocation(), TraceEnd, FColor::Red, false, 3.0f, 0, 3.0f);
-    }
 }
 
 APlayerController* ASTUBaseWeapon::GetPlayerController() const
@@ -95,11 +75,8 @@ bool ASTUBaseWeapon::GetTraceData(FVector& TraceStart, FVector& TraceEnd) const
     // Set the starting point of the trace (TraceStart) to the socket's location (the muzzle)
     TraceStart = ViewLocation; // SocketTransform.GetLocation();
 
-    // Calculating bullet spread
-    const auto HalfRad = FMath::DegreesToRadians(BulletSpread);
-
     // Calculate the shooting direction based on the socket's orientation
-    const FVector ShootDirection = FMath::VRandCone(ViewRotation.Vector(), HalfRad);  // SocketTransform.GetRotation().GetForwardVector();
+    const FVector ShootDirection = ViewRotation.Vector();  // SocketTransform.GetRotation().GetForwardVector();
 
     // Calculate the end point of the trace
     TraceEnd = TraceStart + ShootDirection * TraceMaxDistance;
