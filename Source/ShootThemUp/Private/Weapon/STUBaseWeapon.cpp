@@ -4,7 +4,6 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
-#include "STUHealthComponent.h"
 #include "Engine/DamageEvents.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/Controller.h"
@@ -25,9 +24,15 @@ void ASTUBaseWeapon::BeginPlay()
     check(WeaponMesh);
 }
 
-void ASTUBaseWeapon::Fire()
+void ASTUBaseWeapon::StartFire()
 {
     MakeShot();
+    GetWorldTimerManager().SetTimer(ShotTimerHandle, this, &ASTUBaseWeapon::MakeShot, TimeBetweenShots, true);
+}
+
+void ASTUBaseWeapon::StopFire()
+{
+    GetWorldTimerManager().ClearTimer(ShotTimerHandle);
 }
 
 void ASTUBaseWeapon::MakeShot()
@@ -90,8 +95,11 @@ bool ASTUBaseWeapon::GetTraceData(FVector& TraceStart, FVector& TraceEnd) const
     // Set the starting point of the trace (TraceStart) to the socket's location (the muzzle)
     TraceStart = ViewLocation; // SocketTransform.GetLocation();
 
+    // Calculating bullet spread
+    const auto HalfRad = FMath::DegreesToRadians(BulletSpread);
+
     // Calculate the shooting direction based on the socket's orientation
-    const FVector ShootDirection = ViewRotation.Vector();  // SocketTransform.GetRotation().GetForwardVector();
+    const FVector ShootDirection = FMath::VRandCone(ViewRotation.Vector(), HalfRad);  // SocketTransform.GetRotation().GetForwardVector();
 
     // Calculate the end point of the trace
     TraceEnd = TraceStart + ShootDirection * TraceMaxDistance;

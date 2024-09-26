@@ -36,8 +36,14 @@ void USTUWeaponComponent::SpawnWeapon()
 }
 
 //Logic: Player presses Fire action -> calls Fire function in WeaponComponent -> calls Fire function of the weapon in the character's hands.
-void USTUWeaponComponent::Fire()
+void USTUWeaponComponent::StartFire()
 {
     if (!CurrentWeapon) return;
-    CurrentWeapon->Fire();
+    CurrentWeapon->StartFire();
+}
+
+void USTUWeaponComponent::StopFire()
+{
+    if (!CurrentWeapon) return;
+    CurrentWeapon->StopFire();
 }
