@@ -21,10 +21,13 @@ public:
 
 protected:
     UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-    TSubclassOf<ASTUBaseWeapon> WeaponClass;
+    TArray<TSubclassOf<ASTUBaseWeapon>> WeaponClasses;
 
     UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-    FName WeaponAttachPointName = "WeaponSocket";
+    FName WeaponEquipSocketName = "WeaponSocket";
+
+    UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+    FName WeaponArmorySocketName = "WeaponSocket";
 
     virtual void BeginPlay() override;
 

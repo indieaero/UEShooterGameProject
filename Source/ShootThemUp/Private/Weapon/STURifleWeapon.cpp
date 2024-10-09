@@ -3,6 +3,7 @@
 #include "Weapon/STURifleWeapon.h"
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
+#include "Engine/DamageEvents.h"
 
 void ASTURifleWeapon::StartFire()
 {
