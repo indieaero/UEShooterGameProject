@@ -104,6 +104,8 @@ void ASTUBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 
     PlayerInputComponent->BindAction("Fire", IE_Pressed, WeaponComponent, &USTUWeaponComponent::StartFire);
     PlayerInputComponent->BindAction("Fire", IE_Released, WeaponComponent, &USTUWeaponComponent::StopFire);
+
+    PlayerInputComponent->BindAction("NextWeapon", IE_Pressed, WeaponComponent, &USTUWeaponComponent::NextWeapon);
 }
 
 void ASTUBaseCharacter::MoveForward(float Amount)
@@ -170,4 +172,6 @@ void ASTUBaseCharacter::OnDeath()
 
     //Disable capsule collision after death
     GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
+
+    WeaponComponent->StopFire();
 }
