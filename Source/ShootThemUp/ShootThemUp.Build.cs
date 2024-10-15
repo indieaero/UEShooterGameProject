@@ -16,7 +16,7 @@ public class ShootThemUp : ModuleRules
 			"InputCore"
 		});
 
-		PrivateDependencyModuleNames.AddRange(new string[] { });
+		PrivateDependencyModuleNames.AddRange(new string[] { "CADKernel" });
 
 		PublicIncludePaths.AddRange(new string[]
 		{
@@ -24,7 +24,8 @@ public class ShootThemUp : ModuleRules
 			"ShootThemUp/Public/Components",
 			"ShootThemUp/Public/Dev",
 			"ShootThemUp/Public/Weapon",
-			"ShootThemUp/Public/UI"
+			"ShootThemUp/Public/UI",
+			"ShootThemUp/Public/Animations"
 		});
 
 		// Uncomment if you are using Slate UI
