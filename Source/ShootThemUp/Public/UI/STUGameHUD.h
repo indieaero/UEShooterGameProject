@@ -6,9 +6,6 @@
 #include "GameFramework/HUD.h"
 #include "STUGameHUD.generated.h"
 
-/**
- *
- */
 UCLASS()
 class SHOOTTHEMUP_API ASTUGameHUD : public AHUD
 {
@@ -17,6 +14,12 @@ class SHOOTTHEMUP_API ASTUGameHUD : public AHUD
 public:
     //virtual function from AHUD class that can draw lines, text, etc.
     virtual void DrawHUD() override;
+
+protected:
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="UI")
+    TSubclassOf<UUserWidget> PlayerHUDWidgetClass;
+
+    virtual void BeginPlay() override;
 
 private:
     //create separate function where put logic of drawing crosshair
