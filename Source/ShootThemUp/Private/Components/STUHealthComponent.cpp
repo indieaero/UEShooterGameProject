@@ -17,6 +17,8 @@ void USTUHealthComponent::BeginPlay()
 {
     Super::BeginPlay();
 
+    check(MaxHealth > 0);
+
     // Every time when game is start
     SetHealth(MaxHealth);
 
