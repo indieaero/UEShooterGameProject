@@ -29,6 +29,8 @@ public:
     //Create a function for the Health variable that will return its value
     float GetHealth() const { return Health; }
 
+    bool TryToAddHealth(float HealthAmount);
+
 protected:
     //Create max health variable and can change it in Blueprints
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Health", meta = (ClampMin = "0.0", ClampMax = "1000.0"))
