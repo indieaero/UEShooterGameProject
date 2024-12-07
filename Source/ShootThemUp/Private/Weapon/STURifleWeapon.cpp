@@ -4,6 +4,12 @@
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/DamageEvents.h"
+#include "Weapon/Components/STUWeaponFXComponent.h"
+
+ASTURifleWeapon::ASTURifleWeapon()
+{
+    WeaponFXComponent = CreateDefaultSubobject<USTUWeaponFXComponent>("WeaponFXComponent");
+}
 
 void ASTURifleWeapon::StartFire()
 {
@@ -14,6 +20,13 @@ void ASTURifleWeapon::StartFire()
 void ASTURifleWeapon::StopFire()
 {
     GetWorldTimerManager().ClearTimer(ShotTimerHandle);
+}
+
+void ASTURifleWeapon::BeginPlay()
+{
+    Super::BeginPlay();
+
+    check(WeaponFXComponent);
 }
 
 void ASTURifleWeapon::MakeShot()
@@ -38,9 +51,11 @@ void ASTURifleWeapon::MakeShot()
     {
         MakeDamage(HitResult);
         // Draw debug line from the TraceStart to the TraceEnd for visualization in the world.
-        DrawDebugLine(GetWorld(), GetMuzzleWorldLocation(), HitResult.ImpactPoint, FColor::Red, false, 3.0f, 0, 3.0f);
+        //DrawDebugLine(GetWorld(), GetMuzzleWorldLocation(), HitResult.ImpactPoint, FColor::Red, false, 3.0f, 0, 3.0f);
 
-        DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, 10.0f, 24, FColor::Red, false, 5.0f);
+        //DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, 10.0f, 24, FColor::Red, false, 5.0f);
+
+        WeaponFXComponent->PlayImpactFX(HitResult);
     }
     else
     {
