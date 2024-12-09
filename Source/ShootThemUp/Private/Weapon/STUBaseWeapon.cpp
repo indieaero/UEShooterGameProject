@@ -94,6 +94,7 @@ void ASTUBaseWeapon::MakeHit(FHitResult& HitResult, const FVector& TraceStart, c
     // This function takes an actor pointer and adds it to the array of actors to ignore during the trace, allowing to ignore our character
     FCollisionQueryParams CollisionParams;
     CollisionParams.AddIgnoredActor(GetOwner());
+    CollisionParams.bReturnPhysicalMaterial = true;
 
     // Perform a line trace to detect a hit along the shot path, using the LineTraceSingleByChannel
     GetWorld()->LineTraceSingleByChannel(HitResult, TraceStart, TraceEnd, ECollisionChannel::ECC_Visibility, CollisionParams);
