@@ -39,6 +39,9 @@ void USTUWeaponFXComponent::PlayImpactFX(const FHitResult Hit)
 
     if (DecalComponent)
     {
+        //TODO: Hardcode fix in the future
+        DecalComponent->SetFadeScreenSize(0.00f);
+
         DecalComponent->SetFadeOut(ImpactData.DecalData.LifeTime, ImpactData.DecalData.FadeOutTime);
     }
 }
