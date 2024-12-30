@@ -2,8 +2,11 @@
 
 #include "Components/STUHealthComponent.h"
 #include "GameFramework/Actor.h"
+#include "GameFramework/Pawn.h"
+#include "GameFramework/Controller.h"
 #include "Engine/World.h"
 #include  "TimerManager.h"
+#include  "Camera/CameraShakeBase.h"
 
 DEFINE_LOG_CATEGORY_STATIC(logHealthComponent, All, All)
 
@@ -58,6 +61,8 @@ void USTUHealthComponent::BeginPlay()
     {
         GetWorld()->GetTimerManager().SetTimer(HealTimerHandle, this, &USTUHealthComponent::HealUpdate, HealUpdateTime, true, HealDelay);
     }
+
+    PlayCameraShake();
 }
 
 void USTUHealthComponent::HealUpdate()
@@ -77,4 +82,18 @@ void USTUHealthComponent::SetHealth(float NewHealth)
     Health = FMath::Clamp(NewHealth, 0.0f, MaxHealth);
     // After health change, notify all clients via delegate that health has changed
     OnHealthChanged.Broadcast(Health);
+}
+
+void USTUHealthComponent::PlayCameraShake() 
+{
+    if (IsDead()) return;
+
+    const auto Player = Cast<APawn>(GetOwner());
+    if (!Player) return;
+
+    const auto Controller = Player->GetController<APlayerController>();
+    if (!Controller || !Controller->PlayerCameraManager) return;
+
+    Controller->PlayerCameraManager->StartCameraShake(CameraShake);
+
 }
