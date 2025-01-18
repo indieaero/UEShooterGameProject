@@ -12,7 +12,7 @@ class SHOOTTHEMUP_API USTUPlayerHUDWidget : public UUserWidget
 {
     GENERATED_BODY()
 
- public:
+public:
     UFUNCTION(BlueprintCallable, Category = "UI")
     float GetHealthPercent() const;
 
@@ -28,4 +28,11 @@ class SHOOTTHEMUP_API USTUPlayerHUDWidget : public UUserWidget
     UFUNCTION(BlueprintCallable, Category = "UI")
     bool IsPlayerSpectating() const;
 
+    UFUNCTION(BlueprintImplementableEvent, Category = "UI")
+    void OnTakeDamage();
+
+    virtual bool Initialize() override;
+
+private:
+    void OnHealthChanged(float Health, float HealthDelta);
 };

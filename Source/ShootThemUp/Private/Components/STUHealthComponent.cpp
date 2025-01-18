@@ -68,8 +68,6 @@ void USTUHealthComponent::BeginPlay()
 void USTUHealthComponent::HealUpdate()
 {
     SetHealth(Health + HealModifier);
-    // After health change, notify all clients via delegate that health has changed
-    OnHealthChanged.Broadcast(Health);
 
     if (FMath::IsNearlyEqual(Health, MaxHealth) && GetWorld())
     {
@@ -79,9 +77,12 @@ void USTUHealthComponent::HealUpdate()
 
 void USTUHealthComponent::SetHealth(float NewHealth)
 {
-    Health = FMath::Clamp(NewHealth, 0.0f, MaxHealth);
+    const auto NextHealth = FMath::Clamp(NewHealth, 0.0f, MaxHealth);
+    const auto HealthDelta = NextHealth - Health;
+
+    Health = NextHealth;
     // After health change, notify all clients via delegate that health has changed
-    OnHealthChanged.Broadcast(Health);
+    OnHealthChanged.Broadcast(Health, HealthDelta);
 }
 
 void USTUHealthComponent::PlayCameraShake() 
