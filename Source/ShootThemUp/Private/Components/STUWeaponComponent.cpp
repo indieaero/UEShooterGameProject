@@ -3,6 +3,7 @@
 #include "Components/STUWeaponComponent.h"
 #include "Weapon/STUBaseWeapon.h"
 #include "GameFramework/Character.h"
+#include "STUBaseCharacter.h"
 #include "Animations/STUEquipFinishedAnimNotify.h"
 #include "Animations/STUReloadFinishedAnimNotify.h"
 #include "Animations/AnimUtils.h"
@@ -174,7 +175,8 @@ void USTUWeaponComponent::OnReloadFinished(USkeletalMeshComponent* MeshComp)
 
 bool USTUWeaponComponent::CanFire() const
 {
-    return CurrentWeapon && !EquipAnimInProgress && !ReloadAnimInProgress;
+    const auto Player = Cast<ASTUBaseCharacter>(GetOwner());
+    return CurrentWeapon && !Player->IsRunning() && !EquipAnimInProgress && !ReloadAnimInProgress;
 }
 
 bool USTUWeaponComponent::CanEquip() const
