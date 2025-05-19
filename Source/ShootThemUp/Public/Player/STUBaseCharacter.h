@@ -77,6 +77,7 @@ private:
 
     void MoveForward(float Amount);
     void MoveRight(float Amount);
+    void CheckAndJump();
 
     void OnStartRunning();
     void OnStopRunning();

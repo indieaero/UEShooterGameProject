@@ -99,7 +99,7 @@ void ASTUBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
     PlayerInputComponent->BindAxis("MoveRight", this, &ASTUBaseCharacter::MoveRight);
     PlayerInputComponent->BindAxis("LookUp", this, &ASTUBaseCharacter::AddControllerPitchInput);
     PlayerInputComponent->BindAxis("TurnAround", this, &ASTUBaseCharacter::AddControllerYawInput);
-    PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ASTUBaseCharacter::Jump);
+    PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ASTUBaseCharacter::CheckAndJump);
     PlayerInputComponent->BindAction("Run", IE_Pressed, this, &ASTUBaseCharacter::OnStartRunning);
     PlayerInputComponent->BindAction("Run", IE_Released, this, &ASTUBaseCharacter::OnStopRunning);
 
@@ -120,8 +120,15 @@ void ASTUBaseCharacter::MoveForward(float Amount)
 
 void ASTUBaseCharacter::MoveRight(float Amount)
 {
-    if (Amount == 0.0f) return;
+    //disable turning A and D while running 
+    if (IsRunning() || Amount == 0.0f) return;
     AddMovementInput(GetActorRightVector(), Amount);
+}
+
+void ASTUBaseCharacter::CheckAndJump()
+{
+    if (IsRunning()) return;
+    Jump();
 }
 
 void ASTUBaseCharacter::OnStartRunning()
