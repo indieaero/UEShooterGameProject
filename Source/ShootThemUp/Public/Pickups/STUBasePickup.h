@@ -28,9 +28,11 @@ protected:
 
 public:
     virtual void Tick(float DeltaTime) override;
+    bool CouldBeTaken() const;
 
 private:
     float RotationYaw = 0.0f;
+    FTimerHandle RespawnTimeHandle;
 
     virtual bool GivePickupTo(APawn* PlayerPawn);
 
