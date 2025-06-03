@@ -26,6 +26,9 @@ ASTUProjectile::ASTUProjectile()
     MovementComponent->ProjectileGravityScale = 0.0f;
 
     WeaponFXComponent = CreateDefaultSubobject<USTUWeaponFXComponent>("WeaponFXComponent");
+
+    TraceFX = CreateDefaultSubobject<UNiagaraComponent>("TraceFX");
+    TraceFX->SetupAttachment(RootComponent);
 }
 
 void ASTUProjectile::BeginPlay()
@@ -35,6 +38,8 @@ void ASTUProjectile::BeginPlay()
     check(MovementComponent);
     check(CollisionComponent);
     check(WeaponFXComponent);
+
+    TraceFX->Activate(true);
 
     MovementComponent->Velocity = ShotDirection * MovementComponent->InitialSpeed;
     CollisionComponent->IgnoreActorWhenMoving(GetOwner(), true);
@@ -65,7 +70,14 @@ void ASTUProjectile::OnProjectileHit(
     //DrawDebugSphere(GetWorld(), GetActorLocation(), DamageRadius, 24, FColor::Red, false, 5.0f);
     WeaponFXComponent->PlayImpactFX(Hit);
 
-    Destroy();
+    if (TraceFX)
+    {
+        TraceFX->SetVariableBool(FName("EmitterEnabled_Fountain"), false);
+        TraceFX->SetVariableBool(FName("EmitterEnabled_Electric"), false);
+        TraceFX->SetVariableBool(FName("EmitterEnabled_CoreBlue"), false);
+    }
+
+    SetLifeSpan(3.0f);
 }
 
 AController* ASTUProjectile::GetController() const

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "NiagaraComponent.h"
 #include "STUProjectile.generated.h"
 
 class UProjectileMovementComponent;
@@ -43,6 +44,9 @@ protected:
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
     float LifeSeconds = 5.0f;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "VFX")
+    UNiagaraComponent* TraceFX;
 
     virtual void BeginPlay() override;
 
