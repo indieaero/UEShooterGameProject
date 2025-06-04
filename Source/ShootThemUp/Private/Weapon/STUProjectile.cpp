@@ -72,9 +72,7 @@ void ASTUProjectile::OnProjectileHit(
 
     if (TraceFX)
     {
-        TraceFX->SetVariableBool(FName("EmitterEnabled_Fountain"), false);
-        TraceFX->SetVariableBool(FName("EmitterEnabled_Electric"), false);
-        TraceFX->SetVariableBool(FName("EmitterEnabled_CoreBlue"), false);
+        TraceFX->Deactivate();
     }
 
     SetLifeSpan(3.0f);
