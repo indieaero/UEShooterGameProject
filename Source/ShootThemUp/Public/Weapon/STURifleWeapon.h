@@ -10,6 +10,8 @@ class USTUWeaponFXComponent;
 class UNiagaraComponent;
 class UNiagaraSystem;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnShotHitSignature, const FHitResult&, HitResult);
+
 UCLASS()
 class SHOOTTHEMUP_API ASTURifleWeapon : public ASTUBaseWeapon
 {
@@ -17,6 +19,9 @@ class SHOOTTHEMUP_API ASTURifleWeapon : public ASTUBaseWeapon
 
 public:
     ASTURifleWeapon();
+
+    UPROPERTY(BlueprintAssignable, Category = "Weapon")
+    FOnShotHitSignature OnShotHit;
 
     virtual void StartFire() override;
     virtual void StopFire() override;

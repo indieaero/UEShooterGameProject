@@ -58,6 +58,7 @@ void ASTURifleWeapon::MakeShot()
         TraceFXEnd = HitResult.ImpactPoint;
         MakeDamage(HitResult);
         WeaponFXComponent->PlayImpactFX(HitResult);
+        OnShotHit.Broadcast(HitResult);
     }
     SpawnTraceFX(GetMuzzleWorldLocation(), TraceFXEnd);
 

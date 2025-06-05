@@ -75,6 +75,7 @@ void ASTUProjectile::OnProjectileHit(
         TraceFX->Deactivate();
     }
 
+    CollisionComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     SetLifeSpan(3.0f);
 }
 
