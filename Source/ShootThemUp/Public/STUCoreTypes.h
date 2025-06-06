@@ -86,3 +86,16 @@ struct FImpactData
     FDecalData DecalData;
 
 };
+
+// Game Mode Data
+
+USTRUCT(BlueprintType)
+struct FGameData
+{
+    GENERATED_USTRUCT_BODY()
+
+    // Amount of player
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Game", meta = (ClampMin = "1", ClampMax = "100"))
+    int32 PlayersNum = 2;
+
+};
