@@ -120,7 +120,7 @@ void ASTUBaseCharacter::MoveForward(float Amount)
 
 void ASTUBaseCharacter::MoveRight(float Amount)
 {
-    //disable turning A and D while running 
+    // disable turning A and D while running
     if (IsRunning() || Amount == 0.0f) return;
     AddMovementInput(GetActorRightVector(), Amount);
 }
@@ -165,11 +165,19 @@ float ASTUBaseCharacter::GetMovementDirection() const
     return CrossProduct.IsZero() ? Degrees : Degrees * FMath::Sign(CrossProduct.Z);
 }
 
+void ASTUBaseCharacter::SetPlayerColor(const FLinearColor& Color)
+{
+    const auto MaterialInst = GetMesh()->CreateAndSetMaterialInstanceDynamic(0);
+    if (!MaterialInst) return;
+
+    MaterialInst->SetVectorParameterValue(MaterialColorName, Color);
+}
+
 void ASTUBaseCharacter::OnDeath()
 {
     UE_LOG(LogBaseCharacter, Display, TEXT("Player %s is dead"), *GetName());
 
-    //PlayAnimMontage(DeathAnimMontage);
+    // PlayAnimMontage(DeathAnimMontage);
 
     GetCharacterMovement()->DisableMovement();
 
@@ -180,12 +188,12 @@ void ASTUBaseCharacter::OnDeath()
         Controller->ChangeState(NAME_Spectating);
     }
 
-    //Disable capsule collision after death
+    // Disable capsule collision after death
     GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
 
     WeaponComponent->StopFire();
 
-    //Ragdoll Physics
+    // Ragdoll Physics
     GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
     GetMesh()->SetSimulatePhysics(true);
 }
