@@ -1,9 +1,6 @@
 // Shoot Them Up Game, All* Rights Reserved.
 
 #include "Player/STUBaseCharacter.h"
-#include "Camera/CameraComponent.h"
-#include "Components/InputComponent.h"
-#include "GameFramework/SpringArmComponent.h"
 #include "Components/STUCharacterMovementComponent.h"
 #include "Components/STUHealthComponent.h"
 #include "Components/TextRenderComponent.h"
@@ -19,27 +16,9 @@ DEFINE_LOG_CATEGORY_STATIC(LogBaseCharacter, All, All);
 ASTUBaseCharacter::ASTUBaseCharacter(const FObjectInitializer& ObjInit)
     : Super(ObjInit.SetDefaultSubobjectClass<USTUCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
-    // Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
     PrimaryActorTick.bCanEverTick = true;
 
-    SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>("SpringArmComponent");
-    SpringArmComponent->SetupAttachment(GetRootComponent());
-    SpringArmComponent->bUsePawnControlRotation = true;
-    SpringArmComponent->SocketOffset = FVector(0.0f, 100.0f, 80.0f);
-
-    CameraComponent = CreateDefaultSubobject<UCameraComponent>("CameraComponent");
-    CameraComponent->SetupAttachment(SpringArmComponent);
-
-    CameraComponent2 = CreateDefaultSubobject<UCameraComponent>("CameraComponent2");
-    CameraComponent2->SetupAttachment(SpringArmComponent);
-
-    // Create Health component in constructor of STUBaseCharacter
     HealthComponent = CreateDefaultSubobject<USTUHealthComponent>("HealthComponent");
-
-    HealthTextComponent = CreateDefaultSubobject<UTextRenderComponent>("HealthTextComponent");
-    HealthTextComponent->SetupAttachment(GetRootComponent());
-    HealthTextComponent->SetOwnerNoSee(true);
-
     WeaponComponent = CreateDefaultSubobject<USTUWeaponComponent>("WeaponComponent");
 }
 
@@ -50,7 +29,6 @@ void ASTUBaseCharacter::BeginPlay()
 
     // macros for check that Health Component and HealthTextComponent is not null (work only in Debug and Development builds)
     check(HealthComponent);
-    check(HealthTextComponent);
     check(GetCharacterMovement());
     check(GetMesh());
 
@@ -66,8 +44,7 @@ void ASTUBaseCharacter::BeginPlay()
 
 void ASTUBaseCharacter::OnHealthChanged(float Health, float HealthDelta)
 {
-    // Update the text component with the current health value
-    HealthTextComponent->SetText(FText::FromString(FString::Printf(TEXT("%.0f"), Health)));
+
 }
 
 void ASTUBaseCharacter::OnGroundLanded(const FHitResult& Hit)
@@ -88,62 +65,9 @@ void ASTUBaseCharacter::Tick(float DeltaTime)
     Super::Tick(DeltaTime);
 }
 
-// Called to bind functionality to input
-void ASTUBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-    Super::SetupPlayerInputComponent(PlayerInputComponent);
-    check(PlayerInputComponent);
-    check(WeaponComponent);
-
-    PlayerInputComponent->BindAxis("MoveForward", this, &ASTUBaseCharacter::MoveForward);
-    PlayerInputComponent->BindAxis("MoveRight", this, &ASTUBaseCharacter::MoveRight);
-    PlayerInputComponent->BindAxis("LookUp", this, &ASTUBaseCharacter::AddControllerPitchInput);
-    PlayerInputComponent->BindAxis("TurnAround", this, &ASTUBaseCharacter::AddControllerYawInput);
-    PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ASTUBaseCharacter::CheckAndJump);
-    PlayerInputComponent->BindAction("Run", IE_Pressed, this, &ASTUBaseCharacter::OnStartRunning);
-    PlayerInputComponent->BindAction("Run", IE_Released, this, &ASTUBaseCharacter::OnStopRunning);
-
-    PlayerInputComponent->BindAction("Fire", IE_Pressed, WeaponComponent, &USTUWeaponComponent::StartFire);
-    PlayerInputComponent->BindAction("Fire", IE_Released, WeaponComponent, &USTUWeaponComponent::StopFire);
-
-    PlayerInputComponent->BindAction("NextWeapon", IE_Pressed, WeaponComponent, &USTUWeaponComponent::NextWeapon);
-
-    PlayerInputComponent->BindAction("Reload", IE_Pressed, WeaponComponent, &USTUWeaponComponent::Reload);
-}
-
-void ASTUBaseCharacter::MoveForward(float Amount)
-{
-    IsMovingForward = Amount > 0.0f;
-    if (Amount == 0.0f) return;
-    AddMovementInput(GetActorForwardVector(), Amount);
-}
-
-void ASTUBaseCharacter::MoveRight(float Amount)
-{
-    // disable turning A and D while running
-    if (IsRunning() || Amount == 0.0f) return;
-    AddMovementInput(GetActorRightVector(), Amount);
-}
-
-void ASTUBaseCharacter::CheckAndJump()
-{
-    if (IsRunning()) return;
-    Jump();
-}
-
-void ASTUBaseCharacter::OnStartRunning()
-{
-    WantsToRun = true;
-}
-
-void ASTUBaseCharacter::OnStopRunning()
-{
-    WantsToRun = false;
-}
-
 bool ASTUBaseCharacter::IsRunning() const
 {
-    return WantsToRun && IsMovingForward && !GetVelocity().IsZero();
+    return false;
 }
 
 float ASTUBaseCharacter::GetMovementDirection() const
@@ -182,11 +106,6 @@ void ASTUBaseCharacter::OnDeath()
     GetCharacterMovement()->DisableMovement();
 
     SetLifeSpan(LifeSpanOnDeath);
-
-    if (Controller)
-    {
-        Controller->ChangeState(NAME_Spectating);
-    }
 
     // Disable capsule collision after death
     GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
