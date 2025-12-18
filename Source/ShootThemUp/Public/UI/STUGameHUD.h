@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/HUD.h"
+#include "STUCoreTypes.h"
 #include "STUGameHUD.generated.h"
 
 UCLASS()
@@ -24,4 +25,5 @@ protected:
 private:
     //create separate function where put logic of drawing crosshair
     void DrawCrossHair();
+    void OnMatchStateChanged(ESTUMatchState State);
 };
