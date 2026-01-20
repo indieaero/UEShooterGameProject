@@ -4,31 +4,42 @@
 #include "Components/Button.h"
 #include "Kismet/GameplayStatics.h"
 #include "STUGameInstance.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogSTUMenuWidget, All, All);
 
-void USTUMenuWidget::NativeOnInitialized() 
+void USTUMenuWidget::NativeOnInitialized()
 {
     Super::NativeOnInitialized();
 
-    if(StartGameButton) 
+    if (StartGameButton)
     {
         StartGameButton->OnClicked.AddDynamic(this, &USTUMenuWidget::OnStartGame);
     }
+
+    if (QuitGameButton)
+    {
+        QuitGameButton->OnClicked.AddDynamic(this, &USTUMenuWidget::OnQuitGame);
+    }
 }
 
-void USTUMenuWidget::OnStartGame() 
+void USTUMenuWidget::OnStartGame()
 {
     if (!GetWorld()) return;
 
     const auto STUGameInstance = GetWorld()->GetGameInstance<USTUGameInstance>();
     if (!STUGameInstance) return;
 
-    if(STUGameInstance->GetStartUpLevelName().IsNone())
+    if (STUGameInstance->GetStartUpLevelName().IsNone())
     {
         UE_LOG(LogSTUMenuWidget, Error, TEXT("Startup level name is NONE"));
         return;
     }
 
     UGameplayStatics::OpenLevel(this, STUGameInstance->GetStartUpLevelName());
+}
+
+void USTUMenuWidget::OnQuitGame()
+{
+    UKismetSystemLibrary::QuitGame(this, GetOwningPlayer(), EQuitPreference::Quit, true);
 }
