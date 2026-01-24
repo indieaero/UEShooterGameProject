@@ -7,6 +7,8 @@
 #include "STUCoreTypes.h"
 #include "STUGameHUD.generated.h"
 
+class USTUBaseWidget;
+
 UCLASS()
 class SHOOTTHEMUP_API ASTUGameHUD : public AHUD
 {
@@ -30,10 +32,10 @@ protected:
 
 private:
     UPROPERTY()
-    TMap<ESTUMatchState, UUserWidget*> GameWidgets;
+    TMap<ESTUMatchState, USTUBaseWidget*> GameWidgets;
 
     UPROPERTY()
-    UUserWidget* CurrentWidget = nullptr;
+    USTUBaseWidget* CurrentWidget = nullptr;
 
     //create separate function where put logic of drawing crosshair
     void DrawCrossHair();
