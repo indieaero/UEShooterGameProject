@@ -22,7 +22,7 @@ public:
 
     FLevelData GetLevelData() const { return LevelData; }
 
-    void SetSelected(bool bIsSelected);
+    void SetSelected(bool IsSelected);
 
 protected:
     UPROPERTY(meta = (BindWidget))
@@ -44,4 +44,10 @@ private:
 
     UFUNCTION()
     void OnLevelItemClicked();
+
+    UFUNCTION()
+    void OnLevelItemHovered();
+
+    UFUNCTION()
+    void OnLevelItemUnhovered();
 };
