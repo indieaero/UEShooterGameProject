@@ -8,6 +8,8 @@
 #include "Components/CapsuleComponent.h"
 #include "Engine/DamageEvents.h"
 #include "GameFramework/Controller.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
 
 // TODO: read about define log category
 DEFINE_LOG_CATEGORY_STATIC(LogBaseCharacter, All, All);
@@ -115,4 +117,6 @@ void ASTUBaseCharacter::OnDeath()
     // Ragdoll Physics
     GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
     GetMesh()->SetSimulatePhysics(true);
+
+    UGameplayStatics::PlaySoundAtLocation(GetWorld(), DeathSound, GetActorLocation());
 }

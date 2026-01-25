@@ -9,6 +9,7 @@
 class USTUWeaponFXComponent;
 class UNiagaraComponent;
 class UNiagaraSystem;
+class UAudioComponent;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnShotHitSignature, const FHitResult&, HitResult);
 
@@ -55,9 +56,12 @@ private:
     UPROPERTY()
     UNiagaraComponent* MuzzleFXComponent;
 
+    UPROPERTY()
+    UAudioComponent* FireAudioComponent;
+
     void MakeDamage(const FHitResult& HitResult);
-    void InitMuzzleFX();
-    void SetMuzzleFXVisibility(bool Visible);
+    void InitFX();
+    void SetFXActive(bool IsActive);
     void SpawnTraceFX(const FVector& TraceStart, const FVector& TraceEnd);
 
     AController* GetController() const;
