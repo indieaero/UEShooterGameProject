@@ -1,4 +1,4 @@
-// Shoot Them Up Game, All Rights Reserved.
+﻿// Shoot Them Up Game, All Rights Reserved.
 
 #pragma once
 
@@ -87,4 +87,6 @@ private:
     void Killed(AController* KillerController);
     void ApplyDamage(float Damage, AController* InstigatedBy);
     float GetPointDamageModifier(AActor* DamagedActor, const FName& BoneName) const;
+
+    void ReportDamageEvent(float Damage, AController* InstigatedBy);
 };
