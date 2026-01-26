@@ -113,6 +113,7 @@ void ASTUBaseCharacter::OnDeath()
     GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
 
     WeaponComponent->StopFire();
+    WeaponComponent->Zoom(false);
 
     // Ragdoll Physics
     GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
