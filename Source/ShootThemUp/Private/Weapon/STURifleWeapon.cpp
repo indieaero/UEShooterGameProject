@@ -1,4 +1,4 @@
-// Shoot Them Up Game, All Rights Reserved.
+﻿// Shoot Them Up Game, All Rights Reserved.
 
 #include "Weapon/STURifleWeapon.h"
 #include "Engine/World.h"
@@ -18,6 +18,8 @@ ASTURifleWeapon::ASTURifleWeapon()
 
 void ASTURifleWeapon::StartFire()
 {
+    Super::StartFire();
+
     InitFX(); 
     GetWorldTimerManager().SetTimer(ShotTimerHandle, this, &ASTURifleWeapon::MakeShot, TimeBetweenShots, true);
     MakeShot();
@@ -142,7 +144,7 @@ void ASTURifleWeapon::SetFXActive(bool IsActive)
 
     if(FireAudioComponent)
     {
-        IsActive ? FireAudioComponent->Play() : FireAudioComponent->Stop();
+        FireAudioComponent->SetPaused(!IsActive);
     }
 }
 
