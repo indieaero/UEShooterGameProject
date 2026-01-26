@@ -1,4 +1,4 @@
-// Shoot Them Up Game, All Rights Reserved.
+﻿// Shoot Them Up Game, All Rights Reserved.
 
 #pragma once
 
@@ -53,6 +53,8 @@ protected:
 public:
     // Called every frame
     virtual void Tick(float DeltaTime) override;
+    virtual void TurnOff() override;
+    virtual void Reset() override;
 
     UFUNCTION(BlueprintCallable, Category= "Movement")
     virtual bool IsRunning() const;

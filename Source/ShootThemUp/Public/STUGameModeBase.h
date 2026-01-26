@@ -1,4 +1,4 @@
-// Shoot Them Up Game, All Rights Reserved.
+﻿// Shoot Them Up Game, All Rights Reserved.
 
 #pragma once
 
@@ -67,4 +67,6 @@ private:
     void GameOver();
 
     void SetMatchState(ESTUMatchState State);
+
+    void StopAllFire();
 };
