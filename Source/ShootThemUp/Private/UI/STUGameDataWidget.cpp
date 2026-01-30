@@ -1,30 +1,30 @@
-// Shoot Them Up Game, All Rights Reserved.
+﻿// Shoot Them Up Game, All Rights Reserved.
 
 #include "UI/STUGameDataWidget.h"
-#include "STUGameModeBase.h"
+#include "STUGameStateBase.h"
 #include "STUPlayerState.h"
 
 int32 USTUGameDataWidget::GetCurrentRoundNum() const
 {
-    const auto GameMode = GetSTUGameMode();
-    return GameMode ? GameMode->GetCurrentRoundNum() : 0;
+    const auto GameState = GetSTUGameState();
+    return GameState ? GameState->GetCurrentRound() : 0;
 }
 
 int32 USTUGameDataWidget::GetTotalRoundsNum() const
 {
-    const auto GameMode = GetSTUGameMode();
-    return GameMode ? GameMode->GetGameData().RoundsNum : 0;
+    const auto GameState = GetSTUGameState();
+    return GameState ? GameState->GetGameData().RoundsNum : 0;
 }
 
 int32 USTUGameDataWidget::GetRoundSecondsRemaining() const 
 {
-    const auto GameMode = GetSTUGameMode();
-    return GameMode ? GameMode->GetRoundSecondsRemaining() : 0;
+    const auto GameState = GetSTUGameState();
+    return GameState ? GameState->GetRoundCountDown() : 0;
 }
 
-ASTUGameModeBase* USTUGameDataWidget::GetSTUGameMode() const 
+ASTUGameStateBase* USTUGameDataWidget::GetSTUGameState() const
 {
-    return GetWorld() ? Cast<ASTUGameModeBase>(GetWorld()->GetAuthGameMode()) : nullptr;
+    return GetWorld() ? GetWorld()->GetGameState<ASTUGameStateBase>() : nullptr;
 }
 ASTUPlayerState* USTUGameDataWidget::GetSTUPlayerState() const 
 {

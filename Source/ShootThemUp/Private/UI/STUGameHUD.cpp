@@ -1,9 +1,9 @@
-// Shoot Them Up Game, All Rights Reserved.
+﻿// Shoot Them Up Game, All Rights Reserved.
 
 #include "UI/STUGameHUD.h"
 #include "Engine/Canvas.h"
 #include "UI/STUBaseWidget.h"
-#include "STUGameModeBase.h"
+#include "STUGameStateBase.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogSTUGameHUD, All, All);
 
@@ -33,10 +33,11 @@ void ASTUGameHUD::BeginPlay()
 
     if (GetWorld())
     {
-        const auto GameMode = Cast<ASTUGameModeBase>(GetWorld()->GetAuthGameMode());
-        if (GameMode)
+        const auto GameState = GetWorld()->GetGameState<ASTUGameStateBase>();
+        if (GameState)
         {
-            GameMode->OnMatchStateChanged.AddUObject(this, &ASTUGameHUD::OnMatchStateChanged);
+            GameState->OnMatchStateChanged.AddUObject(this, &ASTUGameHUD::OnMatchStateChanged);
+            OnMatchStateChanged(GameState->GetMatchState());
         }
     }
 }

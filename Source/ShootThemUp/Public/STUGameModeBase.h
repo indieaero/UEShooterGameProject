@@ -8,6 +8,7 @@
 #include "STUGameModeBase.generated.h"
 
 class AAIController;
+class ASTUGameStateBase;
 
 UCLASS()
 class SHOOTTHEMUP_API ASTUGameModeBase : public AGameModeBase
@@ -69,4 +70,6 @@ private:
     void SetMatchState(ESTUMatchState State);
 
     void StopAllFire();
+
+    ASTUGameStateBase* GetSTUGameState() const;
 };

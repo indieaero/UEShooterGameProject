@@ -1,7 +1,7 @@
-// Shoot Them Up Game, All Rights Reserved.
+﻿// Shoot Them Up Game, All Rights Reserved.
 
 #include "UI/STUGameOverWidget.h"
-#include "STUGameModeBase.h"
+#include "STUGameStateBase.h"
 #include "Player/STUPlayerState.h"
 #include "UI/STUPlayerStatRowWidget.h"
 #include "Components/VerticalBox.h"
@@ -15,10 +15,10 @@ void USTUGameOverWidget::NativeOnInitialized()
 
     if (GetWorld())
     {
-        const auto GameMode = Cast<ASTUGameModeBase>(GetWorld()->GetAuthGameMode());
-        if (GameMode)
+        const auto GameState = GetWorld()->GetGameState<ASTUGameStateBase>();
+        if (GameState)
         {
-            GameMode->OnMatchStateChanged.AddUObject(this, &USTUGameOverWidget::OnMatchStateChanged);
+            GameState->OnMatchStateChanged.AddUObject(this, &USTUGameOverWidget::OnMatchStateChanged);
         }
     }
 

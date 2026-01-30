@@ -1,4 +1,4 @@
-// Shoot Them Up Game, All Rights Reserved.
+﻿// Shoot Them Up Game, All Rights Reserved.
 
 #pragma once
 
@@ -8,6 +8,7 @@
 
 class ASTUGameModeBase;
 class ASTUPlayerState;
+class ASTUGameStateBase;
 
 UCLASS()
 class SHOOTTHEMUP_API USTUGameDataWidget : public UUserWidget
@@ -25,6 +26,6 @@ public:
     int32 GetRoundSecondsRemaining() const;
 
 private:
-    ASTUGameModeBase* GetSTUGameMode() const;
+    ASTUGameStateBase* GetSTUGameState() const;
     ASTUPlayerState* GetSTUPlayerState() const;
 };

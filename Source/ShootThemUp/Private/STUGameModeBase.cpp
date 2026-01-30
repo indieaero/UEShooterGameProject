@@ -11,6 +11,7 @@
 #include "Components/STURespawnComponent.h"
 #include "Components/STUWeaponComponent.h"
 #include "EngineUtils.h"
+#include "STUGameStateBase.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogSTUGameModeBase, All, All);
 
@@ -22,6 +23,8 @@ ASTUGameModeBase::ASTUGameModeBase()
     PlayerControllerClass = ASTUPlayerController::StaticClass();
     HUDClass = ASTUGameHUD::StaticClass();
     PlayerStateClass = ASTUPlayerState::StaticClass();
+
+    GameStateClass = ASTUGameStateBase::StaticClass();
 }
 
 void ASTUGameModeBase::StartPlay() 
@@ -32,6 +35,14 @@ void ASTUGameModeBase::StartPlay()
     CreateTeamsInfo();
 
     CurrentRound = 1;
+
+    if (ASTUGameStateBase* STUGameState = GetSTUGameState())
+    {
+        STUGameState->SetGameData(GameData);
+        STUGameState->SetCurrentRound(CurrentRound);
+        STUGameState->SetRoundCountDown(GameData.RoundTime);
+    }
+
     StartRound();
 
     SetMatchState(ESTUMatchState::InProgress);
@@ -82,6 +93,14 @@ void ASTUGameModeBase::SpawnBots()
 void ASTUGameModeBase::StartRound() 
 {
     RoundCountDown = GameData.RoundTime;
+
+    if (ASTUGameStateBase* STUGameState = GetSTUGameState())
+    {
+        STUGameState->SetCurrentRound(CurrentRound);
+        STUGameState->SetRoundCountDown(RoundCountDown);
+        STUGameState->SetGameData(GameData);
+    }
+
     GetWorldTimerManager().SetTimer(GameRoundTimerHandle, this, &ASTUGameModeBase::GameTimerUpdate, 1.0f, true);
 }
 
@@ -103,6 +122,12 @@ void ASTUGameModeBase::GameTimerUpdate()
         {
             GameOver();
         }
+    }
+
+    if (ASTUGameStateBase* STUGameState = GetSTUGameState())
+    {
+        STUGameState->SetRoundCountDown(RoundCountDown);
+        STUGameState->SetCurrentRound(CurrentRound);
     }
 }
 
@@ -210,6 +235,12 @@ void ASTUGameModeBase::GameOver()
         }
     }
 
+    RoundCountDown = 0;
+    if (ASTUGameStateBase* STUGameState = GetSTUGameState())
+    {
+        STUGameState->SetRoundCountDown(RoundCountDown);
+    }
+
     SetMatchState(ESTUMatchState::GameOver);
 }
 
@@ -218,6 +249,12 @@ void ASTUGameModeBase::SetMatchState(ESTUMatchState State)
     if (MatchState == State) return;
 
     MatchState = State;
+
+    if (ASTUGameStateBase* STUGameState = GetSTUGameState())
+    {
+        STUGameState->SetMatchState(State);
+    }
+
     OnMatchStateChanged.Broadcast(MatchState);
 }
 
@@ -260,4 +297,9 @@ bool ASTUGameModeBase::ClearPause()
         SetMatchState(ESTUMatchState::InProgress);
     }
     return PauseCleared;
+}
+
+ASTUGameStateBase* ASTUGameModeBase::GetSTUGameState() const
+{
+    return GetWorld() ? GetWorld()->GetGameState<ASTUGameStateBase>() : nullptr;
 }
