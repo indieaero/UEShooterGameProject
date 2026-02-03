@@ -10,6 +10,14 @@ ASTUPlayerController::ASTUPlayerController()
     RespawnComponent = CreateDefaultSubobject<USTURespawnComponent>("RespawnComponent");
 }
 
+void ASTUPlayerController::ClientStartRespawnTimer_Implementation(int32 RespawnTime) 
+{
+    if (RespawnComponent)
+    {
+        RespawnComponent->Respawn(RespawnTime);
+    }
+}
+
 void ASTUPlayerController::BeginPlay()
 {
     Super::BeginPlay();

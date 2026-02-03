@@ -1,8 +1,9 @@
-// Shoot Them Up Game, All Rights Reserved.
+﻿// Shoot Them Up Game, All Rights Reserved.
 
 #include "Player/STUPlayerCharacter.h"
 #include "Camera/CameraComponent.h"
 #include "Components/InputComponent.h"
+#include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/STUWeaponComponent.h"
 #include "Components/SphereComponent.h"
@@ -102,9 +103,12 @@ void ASTUPlayerCharacter::OnDeath()
 {
     Super::OnDeath();
 
-    if (Controller)
+    AController* CachedController = Controller;
+
+    if (CachedController)
     {
-        Controller->ChangeState(NAME_Spectating);
+        CachedController->UnPossess();
+        CachedController->ChangeState(NAME_Spectating);
     }
 }
 

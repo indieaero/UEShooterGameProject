@@ -36,7 +36,7 @@ public:
 
 protected:
     // Create max health variable and can change it in Blueprints
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Health", meta = (ClampMin = "0.0", ClampMax = "1000.0"))
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Replicated, Category = "Health", meta = (ClampMin = "0.0", ClampMax = "1000.0"))
     float MaxHealth = 100.0f;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Heal")
@@ -58,11 +58,22 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Health")
     TMap<UPhysicalMaterial*, float> DamageModifiers;
 
+    // Register replication of properties (Health, MaxHealth)
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
     // Called when the game starts
     virtual void BeginPlay() override;
 
 private:
+    UPROPERTY(ReplicatedUsing = OnRep_Health)
     float Health = 0.0f;
+
+    // To avoid multiple replication of Health value
+    float LastReplicatedHealth = -1.0f;
+
+    // RepNotify for changes made to Health.
+    UFUNCTION()
+    void OnRep_Health();
 
     FTimerHandle HealTimerHandle;
 

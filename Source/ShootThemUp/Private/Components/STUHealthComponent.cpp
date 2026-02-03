@@ -10,6 +10,7 @@
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "Engine/DamageEvents.h"
 #include "Perception/AISense_Damage.h"
+#include "Net/UnrealNetwork.h"
 
 DEFINE_LOG_CATEGORY_STATIC(logHealthComponent, All, All)
 
@@ -17,10 +18,15 @@ DEFINE_LOG_CATEGORY_STATIC(logHealthComponent, All, All)
 USTUHealthComponent::USTUHealthComponent()
 {
     PrimaryComponentTick.bCanEverTick = false;
+
+    SetIsReplicatedByDefault(true);
 }
 
 bool USTUHealthComponent::TryToAddHealth(float HealthAmount)
 {
+    // Only server can change health
+    if (GetOwner() && !GetOwner()->HasAuthority()) return false;
+
     if (Health == MaxHealth)
     {
         return false;
@@ -29,17 +35,46 @@ bool USTUHealthComponent::TryToAddHealth(float HealthAmount)
     return true;
 }
 
+void USTUHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const 
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME(USTUHealthComponent, Health);
+    DOREPLIFETIME(USTUHealthComponent, MaxHealth);
+}
+
+void USTUHealthComponent::OnRep_Health() 
+{
+    const float PreviousHealth = LastReplicatedHealth;
+    LastReplicatedHealth = Health;
+    const float HealthDelta = (PreviousHealth >= 0.0f) ? (Health - PreviousHealth) : 0.0f;
+
+    OnHealthChanged.Broadcast(Health, HealthDelta);
+
+    if (!IsDead() && HealthDelta < 0.0f)
+    {
+        PlayCameraShake();
+    }
+
+    if (IsDead())
+    {
+        OnDeath.Broadcast();
+    }
+}
+
 void USTUHealthComponent::BeginPlay()
 {
     Super::BeginPlay();
 
     check(MaxHealth > 0);
 
-    // Every time when game is start
-    SetHealth(MaxHealth);
+    // Only server can set initial health value
+    AActor* ComponentOwner = GetOwner();
+    if (ComponentOwner && ComponentOwner->HasAuthority())
+    {
+        SetHealth(MaxHealth);
+    }
 
     // Each component has a get owner function that returns a pointer to the owner of this component
-    AActor* ComponentOwner = GetOwner();
     if (ComponentOwner)
     {
         ComponentOwner->OnTakeAnyDamage.AddDynamic(this, &USTUHealthComponent::OnTakeAnyDamage);

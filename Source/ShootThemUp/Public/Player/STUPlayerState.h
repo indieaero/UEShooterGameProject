@@ -26,10 +26,21 @@ public:
 
     void LogInfo() const;
 
+protected:
+    // Registering replicated properties (TeamID, TeamColor, KillsNum, DeathsNum)
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 private:
-    int32 TeamID;
+    // Must have UPROPERTY(Replicated) so DOREPLIFETIME can find them in reflection.
+    UPROPERTY(Replicated)
+    int32 TeamID = 0;
+
+    UPROPERTY(Replicated)
     FLinearColor TeamColor;
 
+    UPROPERTY(Replicated)
     int32 KillsNum = 0;
+
+    UPROPERTY(Replicated)
     int32 DeathsNum = 0;
 };

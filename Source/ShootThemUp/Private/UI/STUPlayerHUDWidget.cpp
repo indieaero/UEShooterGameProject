@@ -1,8 +1,9 @@
-// Shoot Them Up Game, All Rights Reserved.
+﻿// Shoot Them Up Game, All Rights Reserved.
 
 #include "UI/STUPlayerHUDWidget.h"
 #include "Components/STUHealthComponent.h"
 #include "Components/STUWeaponComponent.h"
+#include "Components/STURespawnComponent.h"
 #include "GameFramework/Pawn.h"
 #include "STUUtils.h"
 #include "Components/ProgressBar.h"
@@ -41,7 +42,16 @@ bool USTUPlayerHUDWidget::IsPlayerAlive() const
 bool USTUPlayerHUDWidget::IsPlayerSpectating() const
 {
     const auto Controller = GetOwningPlayer();
-    return Controller && Controller->GetStateName() == NAME_Spectating;
+    if (!Controller) return false;
+
+    if (Controller->GetStateName() == NAME_Spectating) return true;
+    return IsRespawnInProgress();
+}
+
+bool USTUPlayerHUDWidget::IsRespawnInProgress() const
+{
+    const auto RespawnComponent = STUUtils::GetSTUPlayerComponent<USTURespawnComponent>(GetOwningPlayer());
+    return RespawnComponent && RespawnComponent->IsRespawnInProgress();
 }
 
 void USTUPlayerHUDWidget::NativeOnInitialized()

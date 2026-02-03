@@ -1,4 +1,4 @@
-// Shoot Them Up Game, All Rights Reserved.
+﻿// Shoot Them Up Game, All Rights Reserved.
 
 #pragma once
 
@@ -29,6 +29,9 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "UI")
     bool IsPlayerSpectating() const;
+
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    bool IsRespawnInProgress() const;
 
     UFUNCTION(BlueprintImplementableEvent, Category = "UI")
     void OnTakeDamage();

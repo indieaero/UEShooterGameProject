@@ -1,4 +1,4 @@
-// Shoot Them Up Game, All Rights Reserved.
+﻿// Shoot Them Up Game, All Rights Reserved.
 
 #pragma once
 
@@ -16,6 +16,9 @@ class SHOOTTHEMUP_API ASTUPlayerController : public APlayerController
 
 public:
     ASTUPlayerController();
+
+    UFUNCTION(Client, Reliable)
+    void ClientStartRespawnTimer(int32 RespawnTime);
 
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")

@@ -40,14 +40,14 @@ void USTUGameOverWidget::UpdatePlayersStat()
 {
     if (!GetWorld() || !PlayerStatBox) return;
 
+    const auto GameState = GetWorld()->GetGameState<ASTUGameStateBase>();
+    if (!GameState) return;
+
     PlayerStatBox->ClearChildren();
 
-    for (auto It = GetWorld()->GetControllerIterator(); It; ++It)
+    for (int32 i = 0; i < GameState->PlayerArray.Num(); ++i)
     {
-        const auto Controller = It->Get();
-        if (!Controller) continue;
-
-        const auto PlayerState = Cast<ASTUPlayerState>(Controller->PlayerState);
+        const auto PlayerState = Cast<ASTUPlayerState>(GameState->PlayerArray[i]);
         if (!PlayerState) continue;
 
         const auto PlayerStatRowWidget = CreateWidget<USTUPlayerStatRowWidget>(GetWorld(), PlayerStatRowWidgetClass);
@@ -57,7 +57,10 @@ void USTUGameOverWidget::UpdatePlayersStat()
         PlayerStatRowWidget->SetKills(STUUtils::TextFromInt(PlayerState->GetKillsNum()));
         PlayerStatRowWidget->SetDeaths(STUUtils::TextFromInt(PlayerState->GetDeathsNum()));
         PlayerStatRowWidget->SetTeam(STUUtils::TextFromInt(PlayerState->GetTeamID()));
-        PlayerStatRowWidget->SetPlayerIndocatorVisibility(Controller->IsPlayerController());
+
+        // local player is the one whose PlayerState belongs to our controller.
+        const bool bIsLocalPlayer = (GetOwningPlayer() && PlayerState->GetOwningController() == GetOwningPlayer());
+        PlayerStatRowWidget->SetPlayerIndocatorVisibility(bIsLocalPlayer);
         PlayerStatRowWidget->SetTeamColor(PlayerState->GetTeamColor());
 
         PlayerStatBox->AddChild(PlayerStatRowWidget);
