@@ -102,13 +102,10 @@ bool ASTUPlayerCharacter::IsRunning() const
 void ASTUPlayerCharacter::OnDeath()
 {
     Super::OnDeath();
-
-    AController* CachedController = Controller;
-
-    if (CachedController)
+    
+    if (Controller)
     {
-        CachedController->UnPossess();
-        CachedController->ChangeState(NAME_Spectating);
+        Controller->ChangeState(NAME_Spectating);
     }
 }
 
