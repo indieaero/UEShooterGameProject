@@ -19,9 +19,10 @@ class SHOOTTHEMUP_API ASTUProjectile : public AActor
 public:
     ASTUProjectile();
 
-    void SetShotDirection(const FVector& Direction){ ShotDirection = Direction; }
+    void SetShotDirection(const FVector& Direction) { ShotDirection = Direction; }
 
 protected:
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
     UPROPERTY(VisibleAnywhere, Category = "Weapon")
     // class responsible for spherical collision
     USphereComponent* CollisionComponent;
@@ -51,6 +52,7 @@ protected:
     virtual void BeginPlay() override;
 
 private:
+    UPROPERTY(Replicated)
     FVector ShotDirection;
 
     UFUNCTION()

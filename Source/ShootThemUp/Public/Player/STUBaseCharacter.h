@@ -1,4 +1,4 @@
-﻿// Shoot Them Up Game, All Rights Reserved.
+// Shoot Them Up Game, All Rights Reserved.
 
 #pragma once
 
@@ -63,6 +63,33 @@ public:
     float GetMovementDirection() const;
 
     void SetPlayerColor(const FLinearColor& Color);
+
+    /** Aim rotation; for remote pawns uses replicated value so weapon pose is correct in multiplayer. */
+    virtual FRotator GetBaseAimRotation() const override;
+
+    /** For ABP: aim delta from character forward. (0,0,0) = looking forward; feed this to Aim Offset so (0,0) = center pose. */
+    UFUNCTION(BlueprintCallable, Category = "Animation")
+    FRotator GetAimRotationRelativeToCharacter() const;
+
+    UFUNCTION(Server, Unreliable)
+    void ServerUpdateViewRotation(FRotator NewRotation);
+
+protected:
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+    UPROPERTY(ReplicatedUsing = OnRep_TeamColor)
+    FLinearColor TeamColor = FLinearColor::White;
+
+    /** Replicated view/aim rotation so remote clients can display correct weapon pose. */
+    UPROPERTY(Replicated)
+    FRotator ReplicatedViewRotation = FRotator::ZeroRotator;
+
+    /** Set after first ServerUpdateViewRotation; until then GetBaseAimRotation returns horizontal for remote pawns. */
+    UPROPERTY(Replicated)
+    bool bReplicatedViewRotationSet = false;
+
+    UFUNCTION()
+    void OnRep_TeamColor();
 
 private:
     UFUNCTION()

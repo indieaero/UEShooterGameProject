@@ -34,6 +34,15 @@ public:
     virtual void Tick(float DeltaTime) override;
     bool CouldBeTaken() const;
 
+protected:
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+    UPROPERTY(ReplicatedUsing = OnRep_PickupTaken)
+    bool bPickupTaken = false;
+
+    UFUNCTION()
+    void OnRep_PickupTaken();
+
 private:
     float RotationYaw = 0.0f;
     FTimerHandle RespawnTimeHandle;

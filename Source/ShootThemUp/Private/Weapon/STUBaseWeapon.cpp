@@ -9,15 +9,28 @@
 #include "GameFramework/Controller.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
+#include "Net/UnrealNetwork.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogBaseWeapon, All, All);
 
 ASTUBaseWeapon::ASTUBaseWeapon()
 {
     PrimaryActorTick.bCanEverTick = true;
+    SetReplicates(true);  // Replicate to clients for ammo display and attachment
 
     WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>("WeaponMesh");
     SetRootComponent(WeaponMesh);
+}
+
+void ASTUBaseWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME(ASTUBaseWeapon, CurrentAmmo);
+}
+
+void ASTUBaseWeapon::OnRep_CurrentAmmo()
+{
+    // Optional: play UI/sound feedback on client when ammo replicates
 }
 
 void ASTUBaseWeapon::BeginPlay()
@@ -27,7 +40,10 @@ void ASTUBaseWeapon::BeginPlay()
     check(WeaponMesh);
     checkf(DefaultAmmo.Bullets > 0, TEXT("Bullets count couldn't be less or equal zero"));
     checkf(DefaultAmmo.Clips > 0, TEXT("Clips count couldn't be less or equal zero"));
-    CurrentAmmo = DefaultAmmo;
+    if (HasAuthority())  // Server sets ammo; replicates to clients
+    {
+        CurrentAmmo = DefaultAmmo;
+    }
 }
 
 void ASTUBaseWeapon::StartFire()
@@ -107,6 +123,7 @@ void ASTUBaseWeapon::MakeHit(FHitResult& HitResult, const FVector& TraceStart, c
 
 void ASTUBaseWeapon::DecreaseAmmo()
 {
+    if (!HasAuthority()) return;  // Server authoritative; CurrentAmmo replicates
     if (CurrentAmmo.Bullets == 0)
     {
         UE_LOG(LogBaseWeapon, Warning, TEXT("No more Bullets"));
@@ -139,9 +156,10 @@ bool ASTUBaseWeapon::IsAmmoFull() const
 
 void ASTUBaseWeapon::ChangeClip()
 {
+    if (!HasAuthority()) return;  // Server only; ammo replicates
     if (!CurrentAmmo.Infinite)
     {
-        if(CurrentAmmo.Clips == 0)
+        if (CurrentAmmo.Clips == 0)
         {
             UE_LOG(LogBaseWeapon, Warning, TEXT("No more clips"));
             return;
@@ -159,6 +177,7 @@ bool ASTUBaseWeapon::CanReload() const
 
 bool ASTUBaseWeapon::TryToAddAmmo(int32 ClipsAmount)
 {
+    if (!HasAuthority()) return false;  // Pickup gives ammo on server only
     if (CurrentAmmo.Infinite || IsAmmoFull() || ClipsAmount <= 0) return false;
 
     if(IsAmmoEmpty())

@@ -17,6 +17,9 @@ class SHOOTTHEMUP_API ASTULauncherWeapon : public ASTUBaseWeapon
 public:
 	virtual void StartFire() override;
 
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastPlayFireFX();
+
 protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
     TSubclassOf<ASTUProjectile> ProjectileClass;

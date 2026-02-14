@@ -1,4 +1,4 @@
-﻿// Shoot Them Up Game, All Rights Reserved.
+// Shoot Them Up Game, All Rights Reserved.
 
 #include "Player/STUPlayerController.h"
 #include "Components/STURespawnComponent.h"
@@ -60,6 +60,13 @@ void ASTUPlayerController::OnPossess(APawn* InPawn)
 {
     Super::OnPossess(InPawn);
 
+    // Initial aim horizontal (pitch 0) so default pose is not "weapon up"
+    if (InPawn)
+    {
+        const FRotator HorizontalView(0.f, InPawn->GetActorRotation().Yaw, 0.f);
+        SetControlRotation(HorizontalView);
+    }
+
     OnNewPawn.Broadcast(InPawn);
 }
 
@@ -74,7 +81,11 @@ void ASTUPlayerController::SetupInputComponent()
 
 void ASTUPlayerController::OnPauseGame()
 {
-    if (!GetWorld() || !GetWorld()->GetAuthGameMode()) return;
+    ServerSetPause();  // Pause is server-only (GameMode lives on server)
+}
 
+void ASTUPlayerController::ServerSetPause_Implementation()
+{
+    if (!GetWorld() || !GetWorld()->GetAuthGameMode()) return;
     GetWorld()->GetAuthGameMode()->SetPause(this);
 }

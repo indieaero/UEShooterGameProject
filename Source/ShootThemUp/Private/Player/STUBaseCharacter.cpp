@@ -1,4 +1,4 @@
-﻿// Shoot Them Up Game, All* Rights Reserved.
+// Shoot Them Up Game, All* Rights Reserved.
 
 #include "Player/STUBaseCharacter.h"
 #include "Components/STUCharacterMovementComponent.h"
@@ -10,6 +10,7 @@
 #include "GameFramework/Controller.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
+#include "Net/UnrealNetwork.h"
 
 // TODO: read about define log category
 DEFINE_LOG_CATEGORY_STATIC(LogBaseCharacter, All, All);
@@ -44,6 +45,60 @@ void ASTUBaseCharacter::BeginPlay()
     HealthComponent->OnHealthChanged.AddUObject(this, &ASTUBaseCharacter::OnHealthChanged);
 
     LandedDelegate.AddDynamic(this, &ASTUBaseCharacter::OnGroundLanded);
+
+    // Send initial view rotation to server so remote clients get correct weapon pose from first frame
+    if (IsLocallyControlled() && IsPlayerControlled() && GetController())
+    {
+        ServerUpdateViewRotation(GetControlRotation());
+    }
+}
+
+void ASTUBaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME(ASTUBaseCharacter, TeamColor);
+    DOREPLIFETIME(ASTUBaseCharacter, ReplicatedViewRotation);   // Remote clients: correct weapon aim pose
+    DOREPLIFETIME(ASTUBaseCharacter, bReplicatedViewRotationSet);
+}
+
+FRotator ASTUBaseCharacter::GetBaseAimRotation() const
+{
+    if (IsLocallyControlled())
+    {
+        return GetControlRotation();
+    }
+    // Before first replication: return horizontal by body yaw so remote pawn doesn't show "weapon up" default
+    if (!bReplicatedViewRotationSet)
+    {
+        return FRotator(0.f, GetActorRotation().Yaw, 0.f);
+    }
+    return ReplicatedViewRotation;
+}
+
+FRotator ASTUBaseCharacter::GetAimRotationRelativeToCharacter() const
+{
+    // Delta from body forward; (0,0,0) = aiming forward = Aim Offset center pose
+    const FRotator AimWorld = GetBaseAimRotation();
+    const FRotator BodyWorld = GetActorRotation();
+    return (AimWorld - BodyWorld).GetNormalized();
+}
+
+void ASTUBaseCharacter::ServerUpdateViewRotation_Implementation(FRotator NewRotation)
+{
+    ReplicatedViewRotation = NewRotation;
+    bReplicatedViewRotationSet = true;
+}
+
+void ASTUBaseCharacter::OnRep_TeamColor()
+{
+    if (GetMesh())
+    {
+        const auto MaterialInst = GetMesh()->CreateAndSetMaterialInstanceDynamic(0);
+        if (MaterialInst)
+        {
+            MaterialInst->SetVectorParameterValue(MaterialColorName, TeamColor);
+        }
+    }
 }
 
 void ASTUBaseCharacter::OnHealthChanged(float Health, float HealthDelta)
@@ -53,19 +108,28 @@ void ASTUBaseCharacter::OnHealthChanged(float Health, float HealthDelta)
 
 void ASTUBaseCharacter::OnGroundLanded(const FHitResult& Hit)
 {
-    const auto FallVelocityZ = -GetVelocity().Z;
+    if (!HasAuthority()) return;  // Server applies fall damage; health replicates
+    const float FallVelocityZ = -GetVelocity().Z;
     if (FallVelocityZ < LandedDamageVelocity.X) return;
 
-    const auto FallDamage = FMath::GetMappedRangeValueClamped(LandedDamageVelocity, LandedDamage, FallVelocityZ);
+    const float FallDamage = FMath::GetMappedRangeValueClamped(LandedDamageVelocity, LandedDamage, FallVelocityZ);
     TakeDamage(FallDamage, FPointDamageEvent{}, nullptr, nullptr);
-
-    UE_LOG(LogBaseCharacter, Display, TEXT("Player %s recived landed damage: %f"), *GetName(), FallDamage);
+    UE_LOG(LogBaseCharacter, Display, TEXT("Player %s received landed damage: %f"), *GetName(), FallDamage);
 }
 
 // Called every frame
 void ASTUBaseCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
+    // Replicate view rotation to server so other clients see correct weapon aim
+    if (IsLocallyControlled() && IsPlayerControlled() && GetController())
+    {
+        const FRotator CurrentView = GetControlRotation();
+        if (!ReplicatedViewRotation.Equals(CurrentView, 0.5f))
+        {
+            ServerUpdateViewRotation(CurrentView);
+        }
+    }
 }
 
 void ASTUBaseCharacter::TurnOff() 
@@ -108,10 +172,15 @@ float ASTUBaseCharacter::GetMovementDirection() const
 
 void ASTUBaseCharacter::SetPlayerColor(const FLinearColor& Color)
 {
-    const auto MaterialInst = GetMesh()->CreateAndSetMaterialInstanceDynamic(0);
-    if (!MaterialInst) return;
-
-    MaterialInst->SetVectorParameterValue(MaterialColorName, Color);
+    TeamColor = Color;
+    if (GetMesh())
+    {
+        const auto MaterialInst = GetMesh()->CreateAndSetMaterialInstanceDynamic(0);
+        if (MaterialInst)
+        {
+            MaterialInst->SetVectorParameterValue(MaterialColorName, Color);
+        }
+    }
 }
 
 void ASTUBaseCharacter::OnDeath()

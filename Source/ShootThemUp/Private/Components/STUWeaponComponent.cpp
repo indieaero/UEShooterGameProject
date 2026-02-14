@@ -7,6 +7,8 @@
 #include "Animations/STUEquipFinishedAnimNotify.h"
 #include "Animations/STUReloadFinishedAnimNotify.h"
 #include "Animations/AnimUtils.h"
+#include "Net/UnrealNetwork.h"
+#include "EngineUtils.h"
 
 DEFINE_LOG_CATEGORY_STATIC(logWeaponComponent, All, All)
 
@@ -15,6 +17,13 @@ constexpr static int32 WeaponNum = 2;
 USTUWeaponComponent::USTUWeaponComponent()
 {
     PrimaryComponentTick.bCanEverTick = false;
+    SetIsReplicatedByDefault(true);
+}
+
+void USTUWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME(USTUWeaponComponent, CurrentWeaponIndex);  // Clients sync equipped weapon
 }
 
 void USTUWeaponComponent::BeginPlay()
@@ -25,17 +34,79 @@ void USTUWeaponComponent::BeginPlay()
 
     InitAnimations();
     CurrentWeaponIndex = 0;
-    SpawnWeapons();
-    EquipWeapon(CurrentWeaponIndex);
+
+    // Server spawns weapons; client finds them from replicated attached actors
+    if (GetOwner() && GetOwner()->HasAuthority())
+    {
+        SpawnWeapons();
+        EquipWeapon(CurrentWeaponIndex);
+    }
+    else
+    {
+        if (GetWorld())
+        {
+            GetWorld()->GetTimerManager().SetTimerForNextTick(this, &USTUWeaponComponent::DiscoverReplicatedWeapons);
+        }
+    }
+}
+
+void USTUWeaponComponent::DiscoverReplicatedWeapons()
+{
+    // Client: collect weapons replicated from server (attached to character mesh)
+    ACharacter* Character = Cast<ACharacter>(GetOwner());
+    if (!Character) return;
+
+    TArray<AActor*> AttachedActors;
+    Character->GetAttachedActors(AttachedActors, false, true);
+    Weapons.Empty();
+    for (AActor* Actor : AttachedActors)
+    {
+        if (ASTUBaseWeapon* Weapon = Cast<ASTUBaseWeapon>(Actor))
+        {
+            Weapons.Add(Weapon);
+        }
+    }
+    // Sort to match WeaponData order (Rifle first, Launcher second, etc.)
+    Weapons.Sort([this](const ASTUBaseWeapon& A, const ASTUBaseWeapon& B)
+    {
+        int32 IndexA = WeaponData.IndexOfByPredicate([&](const FWeaponData& D) { return D.WeaponClass == A.GetClass(); });
+        int32 IndexB = WeaponData.IndexOfByPredicate([&](const FWeaponData& D) { return D.WeaponClass == B.GetClass(); });
+        if (IndexA == INDEX_NONE) IndexA = 999;
+        if (IndexB == INDEX_NONE) IndexB = 999;
+        return IndexA < IndexB;
+    });
+    if (Weapons.Num() > 0 && CurrentWeaponIndex >= 0 && CurrentWeaponIndex < Weapons.Num())
+    {
+        CurrentWeapon = Weapons[CurrentWeaponIndex];
+    }
+    if (Weapons.Num() < WeaponNum && GetWorld())
+    {
+        GetWorld()->GetTimerManager().SetTimerForNextTick(this, &USTUWeaponComponent::DiscoverReplicatedWeapons);
+    }
+}
+
+void USTUWeaponComponent::OnRep_CurrentWeaponIndex()
+{
+    // Sync current weapon when index replicates from server
+    if (Weapons.IsValidIndex(CurrentWeaponIndex))
+    {
+        CurrentWeapon = Weapons[CurrentWeaponIndex];
+    }
 }
 
 void USTUWeaponComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     CurrentWeapon = nullptr;
-    for (auto Weapon : Weapons)
+    if (GetOwner() && GetOwner()->HasAuthority())  // Only server owns and destroys weapon actors
     {
-        Weapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-        Weapon->Destroy();
+        for (auto Weapon : Weapons)
+        {
+            if (Weapon)
+            {
+                Weapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+                Weapon->Destroy();
+            }
+        }
     }
     Weapons.Empty();
 
@@ -77,9 +148,10 @@ void USTUWeaponComponent::EquipWeapon(int32 WeaponIndex)
         UE_LOG(logWeaponComponent, Warning, TEXT("Invalid weapon index"));
         return;
     }
+    if (GetOwner() && !GetOwner()->HasAuthority()) return;  // Server only: attachment replicates
 
     ACharacter* Character = Cast<ACharacter>(GetOwner());
-    if(!Character) return;
+    if (!Character) return;
 
     if (CurrentWeapon)
     {
@@ -101,27 +173,63 @@ void USTUWeaponComponent::EquipWeapon(int32 WeaponIndex)
     EquipAnimInProgress = true;
 
     PlayAnimMontage(EquipAnimMontage);
+    MulticastPlayEquipAnim();
 }
 
-//Logic: Player presses Fire action -> calls Fire function in WeaponComponent -> calls Fire function of the weapon in the character's hands.
 void USTUWeaponComponent::StartFire()
 {
+    if (GetOwner() && GetOwner()->GetLocalRole() < ROLE_Authority)  // Client: request server to fire
+    {
+        ServerStartFire();
+        return;
+    }
     if (!CanFire()) return;
-    CurrentWeapon->StartFire();
+    if (CurrentWeapon) CurrentWeapon->StartFire();
+}
+
+void USTUWeaponComponent::ServerStartFire_Implementation()
+{
+    if (!CanFire()) return;
+    if (CurrentWeapon) CurrentWeapon->StartFire();  // Server runs actual fire logic
 }
 
 void USTUWeaponComponent::StopFire()
 {
-    if (!CurrentWeapon) return;
-    CurrentWeapon->StopFire();
+    if (GetOwner() && GetOwner()->GetLocalRole() < ROLE_Authority)  // Client: request server
+    {
+        ServerStopFire();
+        return;
+    }
+    if (CurrentWeapon) CurrentWeapon->StopFire();
 }
- 
+
+void USTUWeaponComponent::ServerStopFire_Implementation()
+{
+    if (CurrentWeapon) CurrentWeapon->StopFire();
+}
+
 void USTUWeaponComponent::NextWeapon()
 {
-    if (!CanEquip()) return;
-
+    if (GetOwner() && GetOwner()->GetLocalRole() < ROLE_Authority)  // Client: request server to switch
+    {
+        ServerNextWeapon();
+        return;
+    }
+    if (!CanEquip() || Weapons.Num() == 0) return;
     CurrentWeaponIndex = (CurrentWeaponIndex + 1) % Weapons.Num();
     EquipWeapon(CurrentWeaponIndex);
+}
+
+void USTUWeaponComponent::ServerNextWeapon_Implementation()
+{
+    if (!CanEquip() || Weapons.Num() == 0) return;
+    CurrentWeaponIndex = (CurrentWeaponIndex + 1) % Weapons.Num();
+    EquipWeapon(CurrentWeaponIndex);
+}
+
+void USTUWeaponComponent::ServerReload_Implementation()
+{
+    ChangeClip();  // Server runs reload; MulticastPlayReloadAnim notifies clients
 }
 
 void USTUWeaponComponent::PlayAnimMontage(UAnimMontage* Animation)
@@ -194,7 +302,11 @@ bool USTUWeaponComponent::CanReload() const
 
 void USTUWeaponComponent::Reload()
 {
-    //case when player want reload
+    if (GetOwner() && GetOwner()->GetLocalRole() < ROLE_Authority)  // Client: request server
+    {
+        ServerReload();
+        return;
+    }
     ChangeClip();
 }
 
@@ -221,11 +333,33 @@ void USTUWeaponComponent::OnEmptyClip(ASTUBaseWeapon* AmmoEmptyWeapon)
 
 void USTUWeaponComponent::ChangeClip()
 {
-    if (!CanReload()) return;
+    if (!CanReload() || !CurrentWeapon) return;
+    if (GetOwner() && !GetOwner()->HasAuthority()) return;  // Server only: ammo and anim
     CurrentWeapon->StopFire();
     CurrentWeapon->ChangeClip();
     ReloadAnimInProgress = true;
     PlayAnimMontage(CurrentReloadAnimMontage);
+    MulticastPlayReloadAnim(CurrentReloadAnimMontage);
+}
+
+void USTUWeaponComponent::MulticastPlayEquipAnim_Implementation()
+{
+    // Clients play equip anim (server already did)
+    if (GetOwner() && !GetOwner()->HasAuthority())
+    {
+        EquipAnimInProgress = true;
+        PlayAnimMontage(EquipAnimMontage);
+    }
+}
+
+void USTUWeaponComponent::MulticastPlayReloadAnim_Implementation(UAnimMontage* ReloadMontage)
+{
+    // Clients play reload anim (server already did)
+    if (GetOwner() && !GetOwner()->HasAuthority() && ReloadMontage)
+    {
+        ReloadAnimInProgress = true;
+        PlayAnimMontage(ReloadMontage);
+    }
 }
 
 bool USTUWeaponComponent::GetCurrentWeaponUIData(FWeaponUIData& UIData) const

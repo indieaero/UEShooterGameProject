@@ -4,18 +4,53 @@
 #include "Components/SphereComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
+#include "Net/UnrealNetwork.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogBasePickup, All, All)
 
 ASTUBasePickup::ASTUBasePickup()
 {
     PrimaryActorTick.bCanEverTick = true;
+    SetReplicates(true);
 
     CollisionComponent = CreateDefaultSubobject<USphereComponent>("SphereComponent");
     CollisionComponent->InitSphereRadius(50.0f);
     CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
     CollisionComponent->SetCollisionResponseToAllChannels(ECR_Overlap);
     SetRootComponent(CollisionComponent);
+}
+
+void ASTUBasePickup::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME(ASTUBasePickup, bPickupTaken);
+}
+
+void ASTUBasePickup::OnRep_PickupTaken()
+{
+    // Update visibility/collision on clients when pickup state replicates
+    if (bPickupTaken)
+    {
+        if (CollisionComponent)
+        {
+            CollisionComponent->SetCollisionResponseToAllChannels(ECR_Ignore);
+        }
+        if (GetRootComponent())
+        {
+            GetRootComponent()->SetVisibility(false, true);
+        }
+    }
+    else
+    {
+        if (CollisionComponent)
+        {
+            CollisionComponent->SetCollisionResponseToAllChannels(ECR_Overlap);
+        }
+        if (GetRootComponent())
+        {
+            GetRootComponent()->SetVisibility(true, true);
+        }
+    }
 }
 
 void ASTUBasePickup::BeginPlay()
@@ -30,9 +65,10 @@ void ASTUBasePickup::BeginPlay()
 void ASTUBasePickup::NotifyActorBeginOverlap(AActor* OtherActor)
 {
     Super::NotifyActorBeginOverlap(OtherActor);
+    if (!HasAuthority()) return;  // Only server gives pickup; bPickupTaken replicates
 
     const auto Pawn = Cast<APawn>(OtherActor);
-    if (GivePickupTo(Pawn))
+    if (Pawn && GivePickupTo(Pawn))
     {
         PickupWasTaken();
     }
@@ -57,22 +93,30 @@ bool ASTUBasePickup::GivePickupTo(APawn* PlayerPawn)
 
 void ASTUBasePickup::PickupWasTaken()
 {
-    CollisionComponent->SetCollisionResponseToAllChannels(ECR_Ignore);
+    bPickupTaken = true;
+    if (CollisionComponent)
+    {
+        CollisionComponent->SetCollisionResponseToAllChannels(ECR_Ignore);
+    }
     if (GetRootComponent())
     {
         GetRootComponent()->SetVisibility(false, true);
     }
-
-    GetWorldTimerManager().SetTimer(RespawnTimeHandle, this, &ASTUBasePickup::Respawn, RespawnTime);
-
-    UGameplayStatics::PlaySoundAtLocation(GetWorld(), PickupTakenSound, GetActorLocation());
+    if (GetWorld())
+    {
+        GetWorld()->GetTimerManager().SetTimer(RespawnTimeHandle, this, &ASTUBasePickup::Respawn, RespawnTime);
+        UGameplayStatics::PlaySoundAtLocation(GetWorld(), PickupTakenSound, GetActorLocation());
+    }
 }
 
 void ASTUBasePickup::Respawn()
 {
+    bPickupTaken = false;
     GenerateRotationYaw();
-
-    CollisionComponent->SetCollisionResponseToAllChannels(ECR_Overlap);
+    if (CollisionComponent)
+    {
+        CollisionComponent->SetCollisionResponseToAllChannels(ECR_Overlap);
+    }
     if (GetRootComponent())
     {
         GetRootComponent()->SetVisibility(true, true);

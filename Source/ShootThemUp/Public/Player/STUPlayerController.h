@@ -1,4 +1,4 @@
-﻿// Shoot Them Up Game, All Rights Reserved.
+// Shoot Them Up Game, All Rights Reserved.
 
 #pragma once
 
@@ -19,6 +19,9 @@ public:
 
     UFUNCTION(Client, Reliable)
     void ClientStartRespawnTimer(int32 RespawnTime);
+
+    UFUNCTION(Server, Reliable)
+    void ServerSetPause();
 
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")

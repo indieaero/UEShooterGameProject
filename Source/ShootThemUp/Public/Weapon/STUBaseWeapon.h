@@ -35,9 +35,11 @@ public:
     bool IsAmmoEmpty() const;
     bool IsAmmoFull() const;
 
-    virtual void Zoom(bool IsEnabled) {};
+    virtual void Zoom(bool IsEnabled) {}
 
 protected:
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
     USkeletalMeshComponent* WeaponMesh;
 
@@ -75,9 +77,12 @@ protected:
     bool IsClipEmpty() const;
 
     void LogAmmo();
-    
+
     UNiagaraComponent* SpawnMuzzleFX();
 
-private:
+    UPROPERTY(ReplicatedUsing = OnRep_CurrentAmmo)
     FAmmoData CurrentAmmo;
+
+    UFUNCTION()
+    void OnRep_CurrentAmmo();
 };

@@ -12,6 +12,7 @@ void ASTULauncherWeapon::StartFire()
 
 void ASTULauncherWeapon::MakeShot()
 {
+    if (!HasAuthority()) return;  // Server: spawn projectile and ammo; MulticastPlayFireFX for clients
     if (!GetWorld()) return;
 
     if (IsAmmoEmpty())
@@ -20,24 +21,18 @@ void ASTULauncherWeapon::MakeShot()
         return;
     }
 
-    //get two points in space depending on the position of the camera
     FVector TraceStart, TraceEnd;
     if (!GetTraceData(TraceStart, TraceEnd)) return;
 
     FHitResult HitResult;
     MakeHit(HitResult, TraceStart, TraceEnd);
 
-    //calculate the vector along which the projectile needs to be launched
-    //determine whether we got somewhere or not
     const FVector EndPoint = HitResult.bBlockingHit ? HitResult.ImpactPoint : TraceEnd;
     const FVector Direction = (EndPoint - GetMuzzleWorldLocation()).GetSafeNormal();
 
-    //variable responsible for the initial transformation of the projectile
     const FTransform SpawnTransform(FRotator::ZeroRotator, GetMuzzleWorldLocation());
 
-    //Rocket Actor pointer
     ASTUProjectile* Projectile = GetWorld()->SpawnActorDeferred<ASTUProjectile>(ProjectileClass, SpawnTransform);
-
     if (Projectile)
     {
         Projectile->SetShotDirection(Direction);
@@ -48,4 +43,18 @@ void ASTULauncherWeapon::MakeShot()
     DecreaseAmmo();
     SpawnMuzzleFX();
     UGameplayStatics::SpawnSoundAttached(FireSound, WeaponMesh, MuzzleSocketName);
+    MulticastPlayFireFX();
+}
+
+void ASTULauncherWeapon::MulticastPlayFireFX_Implementation()
+{
+    // Clients play muzzle FX and sound (server already did in MakeShot)
+    if (!HasAuthority())
+    {
+        SpawnMuzzleFX();
+        if (FireSound && WeaponMesh)
+        {
+            UGameplayStatics::SpawnSoundAttached(FireSound, WeaponMesh, MuzzleSocketName);
+        }
+    }
 }

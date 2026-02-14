@@ -1,4 +1,4 @@
-﻿// Shoot Them Up Game, All Rights Reserved.
+// Shoot Them Up Game, All Rights Reserved.
 
 #include "Weapon/STURifleWeapon.h"
 #include "Engine/World.h"
@@ -10,25 +10,46 @@
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 #include "Components/AudioComponent.h"
+#include "Net/UnrealNetwork.h"
 
 ASTURifleWeapon::ASTURifleWeapon()
 {
     WeaponFXComponent = CreateDefaultSubobject<USTUWeaponFXComponent>("WeaponFXComponent");
 }
 
+void ASTURifleWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME(ASTURifleWeapon, bIsFiring);
+}
+
 void ASTURifleWeapon::StartFire()
 {
     Super::StartFire();
-
-    InitFX(); 
+    if (!HasAuthority()) return;
+    bIsFiring = true;
+    InitFX();
     GetWorldTimerManager().SetTimer(ShotTimerHandle, this, &ASTURifleWeapon::MakeShot, TimeBetweenShots, true);
     MakeShot();
 }
 
 void ASTURifleWeapon::StopFire()
 {
+    if (HasAuthority())
+    {
+        bIsFiring = false;
+    }
     GetWorldTimerManager().ClearTimer(ShotTimerHandle);
     SetFXActive(false);
+}
+
+void ASTURifleWeapon::OnRep_IsFiring()
+{
+    if (bIsFiring)
+    {
+        InitFX();
+    }
+    SetFXActive(bIsFiring);
 }
 
 void ASTURifleWeapon::Zoom(bool IsEnabled) 
@@ -56,34 +77,60 @@ void ASTURifleWeapon::BeginPlay()
 
 void ASTURifleWeapon::MakeShot()
 {
+    if (!HasAuthority()) return;  // Server: trace, damage, ammo; then MulticastPlayShotFX for clients
     if (!GetWorld() || IsAmmoEmpty())
     {
         StopFire();
         return;
-    };
+    }
 
     FVector TraceStart, TraceEnd;
     if (!GetTraceData(TraceStart, TraceEnd))
     {
         StopFire();
         return;
-    };
+    }
 
     FHitResult HitResult;
     MakeHit(HitResult, TraceStart, TraceEnd);
 
     FVector TraceFXEnd = TraceEnd;
+    FVector ImpactPoint = TraceEnd;
+    bool bBlockingHit = HitResult.bBlockingHit;
 
     if (HitResult.bBlockingHit)
     {
         TraceFXEnd = HitResult.ImpactPoint;
+        ImpactPoint = HitResult.ImpactPoint;
         MakeDamage(HitResult);
-        WeaponFXComponent->PlayImpactFX(HitResult);
+        if (WeaponFXComponent)
+        {
+            WeaponFXComponent->PlayImpactFX(HitResult);
+        }
         OnShotHit.Broadcast(HitResult);
     }
-    SpawnTraceFX(GetMuzzleWorldLocation(), TraceFXEnd);
-
+    MulticastPlayShotFX(GetMuzzleWorldLocation(), TraceFXEnd, ImpactPoint, bBlockingHit);
     DecreaseAmmo();
+}
+
+void ASTURifleWeapon::MulticastPlayShotFX_Implementation(const FVector& TraceStart, const FVector& TraceEnd, const FVector_NetQuantize& ImpactPoint, bool bBlockingHit)
+{
+    // Local player: use local muzzle position so trace FX comes from barrel, not server position
+    FVector FXTraceStart = TraceStart;
+    const APawn* OwnerPawn = Cast<APawn>(GetOwner());
+    if (OwnerPawn && OwnerPawn->IsLocallyControlled())
+    {
+        FXTraceStart = GetMuzzleWorldLocation();
+    }
+    SpawnTraceFX(FXTraceStart, TraceEnd);
+    if (bBlockingHit && WeaponFXComponent)
+    {
+        FHitResult HitResult;
+        HitResult.bBlockingHit = true;
+        HitResult.ImpactPoint = FVector(ImpactPoint);
+        HitResult.ImpactNormal = (FXTraceStart - ImpactPoint).GetSafeNormal();
+        WeaponFXComponent->PlayImpactFX(HitResult);
+    }
 }
 
 bool ASTURifleWeapon::GetTraceData(FVector& TraceStart, FVector& TraceEnd) const

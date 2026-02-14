@@ -51,8 +51,18 @@ protected:
     float FOVZoomAngle = 50.0f;
 
     virtual void BeginPlay() override;
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
     virtual void MakeShot() override;
+
+    UPROPERTY(ReplicatedUsing = OnRep_IsFiring)
+    bool bIsFiring = false;
+
+    UFUNCTION()
+    void OnRep_IsFiring();
     virtual bool GetTraceData(FVector& TraceStart, FVector& TraceEnd) const override;
+
+    UFUNCTION(NetMulticast, Unreliable)
+    void MulticastPlayShotFX(const FVector& TraceStart, const FVector& TraceEnd, const FVector_NetQuantize& ImpactPoint, bool bBlockingHit);
 
 private:
     FTimerHandle ShotTimerHandle;

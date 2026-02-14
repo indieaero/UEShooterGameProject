@@ -1,4 +1,4 @@
-﻿// Shoot Them Up Game, All Rights Reserved.
+// Shoot Them Up Game, All Rights Reserved.
 
 #include "Components/STUHealthComponent.h"
 #include "GameFramework/Character.h"
@@ -95,11 +95,10 @@ void USTUHealthComponent::HealUpdate()
 
 void USTUHealthComponent::SetHealth(float NewHealth)
 {
-    const auto NextHealth = FMath::Clamp(NewHealth, 0.0f, MaxHealth);
-    const auto HealthDelta = NextHealth - Health;
-
+    if (!GetOwner() || !GetOwner()->HasAuthority()) return;  // Server authoritative; Health replicates
+    const float NextHealth = FMath::Clamp(NewHealth, 0.0f, MaxHealth);
+    const float HealthDelta = NextHealth - Health;
     Health = NextHealth;
-    // After health change, notify all clients via delegate that health has changed
     OnHealthChanged.Broadcast(Health, HealthDelta);
 }
 

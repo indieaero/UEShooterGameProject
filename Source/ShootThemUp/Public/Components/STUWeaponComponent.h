@@ -1,4 +1,4 @@
-// Shoot Them Up Game, All Rights Reserved.
+﻿// Shoot Them Up Game, All Rights Reserved.
 
 #pragma once
 
@@ -22,6 +22,21 @@ public:
     void StopFire();
     virtual void NextWeapon();
     void Reload();
+
+    // Server functions
+    UFUNCTION(Server, Reliable)
+    void ServerStartFire();
+    UFUNCTION(Server, Reliable)
+    void ServerStopFire();
+    UFUNCTION(Server, Reliable)
+    void ServerNextWeapon();
+    UFUNCTION(Server, Reliable)
+    void ServerReload();
+
+    UFUNCTION(NetMulticast, Reliable)
+    void MulticastPlayEquipAnim();
+    UFUNCTION(NetMulticast, Reliable)
+    void MulticastPlayReloadAnim(UAnimMontage* ReloadMontage);
 
     bool GetCurrentWeaponUIData(FWeaponUIData& UIData) const;
     bool GetCurrentWeaponAmmoData(FAmmoData& AmmoData) const;
@@ -50,7 +65,11 @@ protected:
     UPROPERTY()
     TArray<ASTUBaseWeapon*> Weapons;
 
+    UPROPERTY(ReplicatedUsing = OnRep_CurrentWeaponIndex)
     int32 CurrentWeaponIndex = 0;
+
+    UFUNCTION()
+    void OnRep_CurrentWeaponIndex();
 
     virtual void BeginPlay() override;
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -79,4 +98,8 @@ private:
 
     void OnEmptyClip(ASTUBaseWeapon* AmmoEmptyWeapon);
     void ChangeClip();
+
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+    void DiscoverReplicatedWeapons();
 };

@@ -6,10 +6,13 @@
 #include "DrawDebugHelpers.h"
 #include "Kismet/GameplayStatics.h"
 #include "Weapon/Components/STUWeaponFXComponent.h"
+#include "Net/UnrealNetwork.h"
 
 ASTUProjectile::ASTUProjectile()
 {
     PrimaryActorTick.bCanEverTick = false;
+    SetReplicates(true);         // Spawned on server; visible on all clients
+    SetReplicateMovement(true);  // Smooth position sync
 
     CollisionComponent = CreateDefaultSubobject<USphereComponent>("SphereComponent");
     // set radius for collision
@@ -31,6 +34,12 @@ ASTUProjectile::ASTUProjectile()
     TraceFX->SetupAttachment(RootComponent);
 }
 
+void ASTUProjectile::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME(ASTUProjectile, ShotDirection);  // Client needs direction to set velocity in BeginPlay
+}
+
 void ASTUProjectile::BeginPlay()
 {
     Super::BeginPlay();
@@ -42,7 +51,10 @@ void ASTUProjectile::BeginPlay()
     TraceFX->Activate(true);
 
     MovementComponent->Velocity = ShotDirection * MovementComponent->InitialSpeed;
-    CollisionComponent->IgnoreActorWhenMoving(GetOwner(), true);
+    if (GetOwner())
+    {
+        CollisionComponent->IgnoreActorWhenMoving(GetOwner(), true);
+    }
     CollisionComponent->OnComponentHit.AddDynamic(this, &ASTUProjectile::OnProjectileHit);
 
     SetLifeSpan(LifeSeconds);
@@ -55,21 +67,23 @@ void ASTUProjectile::OnProjectileHit(
 
     MovementComponent->StopMovementImmediately();
 
-    // make damage
-    // Call function from GameplayStatics that apply damage to all actors every tick
-    UGameplayStatics::ApplyRadialDamage(GetWorld(),  //
-        DamageAmount,                                //
-        GetActorLocation(),                          //
-        DamageRadius,                                //
-        UDamageType::StaticClass(),                  //
-        {GetOwner()},                                          //
-        this,                                        //
-        GetController(),                             //
-        DoFullDamage);
+    if (HasAuthority())  // Server applies damage; clients only play impact FX
+    {
+        UGameplayStatics::ApplyRadialDamage(GetWorld(),
+            DamageAmount,
+            GetActorLocation(),
+            DamageRadius,
+            UDamageType::StaticClass(),
+            {GetOwner()},
+            this,
+            GetController(),
+            DoFullDamage);
+    }
 
-    //DrawDebugSphere(GetWorld(), GetActorLocation(), DamageRadius, 24, FColor::Red, false, 5.0f);
-    WeaponFXComponent->PlayImpactFX(Hit);
-
+    if (WeaponFXComponent)
+    {
+        WeaponFXComponent->PlayImpactFX(Hit);
+    }
     if (TraceFX)
     {
         TraceFX->Deactivate();

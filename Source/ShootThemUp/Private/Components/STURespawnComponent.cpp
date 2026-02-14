@@ -1,4 +1,4 @@
-﻿// Shoot Them Up Game, All Rights Reserved.
+// Shoot Them Up Game, All Rights Reserved.
 
 #include "Components/STURespawnComponent.h"
 #include "Player/STUPlayerController.h"
@@ -18,6 +18,7 @@ void USTURespawnComponent::Respawn(int32 RespawnTime)
     RespawnCountDown = RespawnTime;
     GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, this, &USTURespawnComponent::RespawnTimerUpdate, 1.0f, true);
 
+    // Server notifies client to run countdown locally (except listen server host who already has timer)
     if (GetOwner() && GetOwner()->HasAuthority())
     {
         const bool bIsListenServerHost =
@@ -38,13 +39,15 @@ bool USTURespawnComponent::IsRespawnInProgress() const
     return GetWorld() && GetWorld()->GetTimerManager().IsTimerActive(RespawnTimerHandle);
 }
 
-void USTURespawnComponent::RespawnTimerUpdate() 
+void USTURespawnComponent::RespawnTimerUpdate()
 {
-    if(--RespawnCountDown == 0) 
+    if (--RespawnCountDown == 0)
     {
         if (!GetWorld()) return;
         GetWorld()->GetTimerManager().ClearTimer(RespawnTimerHandle);
 
+        // Only server can request respawn (GameMode is server-only)
+        if (!GetOwner() || !GetOwner()->HasAuthority()) return;
         const auto GameMode = Cast<ASTUGameModeBase>(GetWorld()->GetAuthGameMode());
         if (!GameMode) return;
 
