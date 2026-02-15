@@ -1,8 +1,9 @@
-﻿// Shoot Them Up Game, All Rights Reserved.
+// Shoot Them Up Game, All Rights Reserved.
 
 #pragma once
 
 #include "CoreMinimal.h"
+#include "TimerManager.h"
 #include "UI/STUBaseWidget.h"
 #include "STUCoreTypes.h"
 #include "STUPlayerHUDWidget.generated.h"
@@ -56,9 +57,12 @@ protected:
     FLinearColor BadColor = FLinearColor::Red;
 
     virtual void NativeOnInitialized() override;
+    virtual void NativeDestruct() override;
 
 private:
-    void OnHealthChanged(float Health, float HealthDelta);
     void OnNewPawn(APawn* NewPawn);
     void UpdateHealthBar();
+
+    FTimerHandle HealthBarRefreshHandle;
+    float LastKnownHealth = -1.0f;
 };

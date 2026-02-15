@@ -1,4 +1,4 @@
-﻿// Shoot Them Up Game, All Rights Reserved.
+// Shoot Them Up Game, All Rights Reserved.
 
 #include "UI/STUPlayerHUDWidget.h"
 #include "Components/STUHealthComponent.h"
@@ -8,6 +8,7 @@
 #include "STUUtils.h"
 #include "Components/ProgressBar.h"
 #include "Player/STUPlayerState.h"
+#include "TimerManager.h"
 
 float USTUPlayerHUDWidget::GetHealthPercent() const
 {
@@ -54,9 +55,24 @@ bool USTUPlayerHUDWidget::IsRespawnInProgress() const
     return RespawnComponent && RespawnComponent->IsRespawnInProgress();
 }
 
+void USTUPlayerHUDWidget::NativeDestruct()
+{
+    if (GetWorld())
+    {
+        GetWorld()->GetTimerManager().ClearTimer(HealthBarRefreshHandle);
+    }
+    Super::NativeDestruct();
+}
+
 void USTUPlayerHUDWidget::NativeOnInitialized()
 {
     Super::NativeOnInitialized();
+
+    if (GetWorld())
+    {
+        GetWorld()->GetTimerManager().SetTimer(HealthBarRefreshHandle, this,
+            &USTUPlayerHUDWidget::UpdateHealthBar, 0.1f, true);
+    }
 
     if (GetOwningPlayer())
     {
@@ -65,32 +81,26 @@ void USTUPlayerHUDWidget::NativeOnInitialized()
     }
 }
 
-void USTUPlayerHUDWidget::OnHealthChanged(float Health, float HealthDelta)
+void USTUPlayerHUDWidget::OnNewPawn(APawn*)
 {
-    if (HealthDelta < 0.0f)
-    {
-        OnTakeDamage();
-    }
-    UpdateHealthBar();
-}
-
-void USTUPlayerHUDWidget::OnNewPawn(APawn* NewPawn)
-{
-    const auto HealthComponent = STUUtils::GetSTUPlayerComponent<USTUHealthComponent>(NewPawn);
-
-    if (HealthComponent && !HealthComponent->OnHealthChanged.IsBoundToObject(this))
-    {
-        HealthComponent->OnHealthChanged.AddUObject(this, &USTUPlayerHUDWidget::OnHealthChanged);
-    }
-    UpdateHealthBar();
+    LastKnownHealth = -1.0f;
 }
 
 void USTUPlayerHUDWidget::UpdateHealthBar()
 {
+    const float Percent = GetHealthPercent();
+
     if (HealthProgressBar)
     {
-        HealthProgressBar->SetFillColorAndOpacity(GetHealthPercent() > PercentColorThreshold ? GoodColor : BadColor);
+        HealthProgressBar->SetPercent(Percent);
+        HealthProgressBar->SetFillColorAndOpacity(Percent > PercentColorThreshold ? GoodColor : BadColor);
     }
+
+    if (LastKnownHealth >= 0.0f && Percent < LastKnownHealth - KINDA_SMALL_NUMBER)
+    {
+        OnTakeDamage();
+    }
+    LastKnownHealth = Percent;
 }
 
 int32 USTUPlayerHUDWidget::GetKillsNum() const
