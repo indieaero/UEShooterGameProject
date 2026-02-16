@@ -8,6 +8,7 @@
 #include "Components/STUWeaponComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values in constructor
 ASTUPlayerCharacter::ASTUPlayerCharacter(const FObjectInitializer& ObjInit) : Super(ObjInit)
@@ -29,6 +30,11 @@ ASTUPlayerCharacter::ASTUPlayerCharacter(const FObjectInitializer& ObjInit) : Su
     CameraCollisionComponent->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
 }
 
+void ASTUPlayerCharacter::ServerSetRunning_Implementation(bool bNewRunning)
+{
+    WantsToRun = bNewRunning;
+}
+
 void ASTUPlayerCharacter::BeginPlay()
 {
     Super::BeginPlay();
@@ -37,6 +43,12 @@ void ASTUPlayerCharacter::BeginPlay()
 
     CameraCollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &ASTUPlayerCharacter::OnCameraCollisionBeginOverlap);
     CameraCollisionComponent->OnComponentEndOverlap.AddDynamic(this, &ASTUPlayerCharacter::OnCameraCollisionEndOverlap);
+}
+
+void ASTUPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const 
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME(ASTUPlayerCharacter, WantsToRun);
 }
 
 // Called to bind functionality to input
@@ -87,16 +99,23 @@ void ASTUPlayerCharacter::CheckAndJump()
 void ASTUPlayerCharacter::OnStartRunning()
 {
     WantsToRun = true;
+    ServerSetRunning(WantsToRun);
 }
 
 void ASTUPlayerCharacter::OnStopRunning()
 {
     WantsToRun = false;
+    ServerSetRunning(WantsToRun);
 }
 
 bool ASTUPlayerCharacter::IsRunning() const
 {
-    return WantsToRun && IsMovingForward && !GetVelocity().IsZero();
+    const FVector Velocity = GetVelocity(); //current character speed from CharacterMovementComponent
+    const float Speed = Velocity.Size();
+
+    const bool bIsMoving = Speed > 0.0f;  //server check if character is moving
+
+    return WantsToRun && bIsMoving;
 }
 
 void ASTUPlayerCharacter::OnDeath()

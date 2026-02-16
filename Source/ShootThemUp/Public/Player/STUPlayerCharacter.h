@@ -1,4 +1,4 @@
-// Shoot Them Up Game, All Rights Reserved.
+﻿// Shoot Them Up Game, All Rights Reserved.
 
 #pragma once
 
@@ -18,6 +18,10 @@ class SHOOTTHEMUP_API ASTUPlayerCharacter : public ASTUBaseCharacter
 public:
     ASTUPlayerCharacter(const FObjectInitializer& ObjInit);
 
+    // Server functions
+    UFUNCTION(Server, Reliable)
+    void ServerSetRunning(bool bNewRunning);
+
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
     USpringArmComponent* SpringArmComponent;
@@ -31,13 +35,18 @@ protected:
     virtual void OnDeath() override;
     virtual void BeginPlay() override;
 
+    // Register replication of properties (WantsToRun,IsMovingForward)
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 public:
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
     virtual bool IsRunning() const override;
 
 private:
+    UPROPERTY(Replicated)
     bool WantsToRun = false;
+
     bool IsMovingForward = false;
 
     void MoveForward(float Amount);
