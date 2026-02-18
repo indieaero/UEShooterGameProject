@@ -1,9 +1,13 @@
-// Shoot Them Up Game, All Rights Reserved.
+﻿// Shoot Them Up Game, All Rights Reserved.
 
 #include "Player/STUPlayerController.h"
 #include "Components/STURespawnComponent.h"
 #include "STUGameStateBase.h"
 #include "STUGameInstance.h"
+#include "Net/UnrealNetwork.h"
+#include "Player/STUPlayerCharacter.h"
+#include "Components/STUHealthComponent.h"
+#include "STUUtils.h"
 
 ASTUPlayerController::ASTUPlayerController()
 {
@@ -77,6 +81,9 @@ void ASTUPlayerController::SetupInputComponent()
 
     InputComponent->BindAction("PauseGame", IE_Pressed, this, &ASTUPlayerController::OnPauseGame);
     InputComponent->BindAction("Mute", IE_Pressed, this, &ASTUPlayerController::OnMuteSound);
+
+    InputComponent->BindAction("SpectateNext", IE_Pressed, this, &ASTUPlayerController::SpectateNext);
+    InputComponent->BindAction("SpectatePrev", IE_Pressed, this, &ASTUPlayerController::SpectatePrev);
 }
 
 void ASTUPlayerController::OnPauseGame()
@@ -88,4 +95,95 @@ void ASTUPlayerController::ServerSetPause_Implementation()
 {
     if (!GetWorld() || !GetWorld()->GetAuthGameMode()) return;
     GetWorld()->GetAuthGameMode()->SetPause(this);
+}
+
+void ASTUPlayerController::SpectateNext()
+{
+    ServerSpectateNext();
+}
+
+void ASTUPlayerController::SpectatePrev()
+{
+    ServerSpectatePrev();
+}
+
+void ASTUPlayerController::ServerSpectateNext_Implementation()
+{
+    auto PlayerPawn = GetPawn();
+    if (PlayerPawn)
+    {
+        auto HealthComponent = STUUtils::GetSTUPlayerComponent<USTUHealthComponent>(PlayerPawn);
+        if (HealthComponent && !HealthComponent->IsDead())
+        {
+            return;  // Only allow spectating when dead
+        }
+    }
+
+    SpectateOffset(+1);
+}
+
+void ASTUPlayerController::ServerSpectatePrev_Implementation()
+{
+    auto PlayerPawn = GetPawn();
+    if (PlayerPawn)
+    {
+        auto HealthComponent = STUUtils::GetSTUPlayerComponent<USTUHealthComponent>(PlayerPawn);
+        if (HealthComponent && !HealthComponent->IsDead())
+        {
+            return;  // Only allow spectating when dead
+        }
+    }
+
+    SpectateOffset(-1);
+}
+
+void ASTUPlayerController::SpectateOffset(int32 Offset)
+{
+    if (!HasAuthority())
+    {
+        return;
+    }
+
+    if (!GetWorld())
+    {
+        return;
+    }
+
+    ASTUGameStateBase* STUGameState = GetWorld()->GetGameState<ASTUGameStateBase>();
+    if (!STUGameState)
+    {
+        return;
+    }
+
+    const TArray<ASTUPlayerCharacter*>& PlayerList = STUGameState->GetPlayerList();
+    const int32 NumPlayers = PlayerList.Num();
+    if (NumPlayers == 0)
+    {
+        return;
+    }
+
+    if (CurrentSpectateIndex == INDEX_NONE)
+    {
+        // Try to find current pawn in list; if not found, start from zero.
+        int32 FoundIndex = INDEX_NONE;
+        if (APawn* CurrentPawn = GetPawn())
+        {
+            FoundIndex = PlayerList.IndexOfByKey(CurrentPawn);
+        }
+        CurrentSpectateIndex = (FoundIndex != INDEX_NONE) ? FoundIndex : 0;
+    }
+    // Cycle through list with offset, wrapping around using modulo.
+    CurrentSpectateIndex = (CurrentSpectateIndex + Offset + NumPlayers) % NumPlayers;
+
+    if (ASTUPlayerCharacter* NewTarget = PlayerList[CurrentSpectateIndex])
+    {
+        SetViewTargetWithBlend(NewTarget, 0.0f);
+    }
+}
+
+void ASTUPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+    DOREPLIFETIME(ASTUPlayerController, CurrentSpectateIndex);
 }

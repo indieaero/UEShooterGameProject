@@ -33,6 +33,7 @@ public:
 
     virtual bool SetPause(APlayerController* PC, FCanUnpause CanUnpauseDelegate = FCanUnpause()) override;
     virtual bool ClearPause() override;
+    virtual void RestartPlayer(AController* NewPlayer) override;
 
 protected:
     UPROPERTY(EditDefaultsOnly, Category = "Game")

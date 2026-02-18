@@ -2,6 +2,7 @@
 
 #include "STUGameStateBase.h"
 #include "Net/UnrealNetwork.h"
+#include "Player/STUPlayerCharacter.h"
 
 ASTUGameStateBase::ASTUGameStateBase()
 {
@@ -29,6 +30,26 @@ void ASTUGameStateBase::SetGameData(const FGameData& NewGameData)
     GameData = NewGameData;
 }
 
+void ASTUGameStateBase::AddPlayer(ASTUPlayerCharacter* Player) 
+{
+    if (!HasAuthority() || !Player)
+    {
+        return;
+    }
+
+    PlayerList.AddUnique(Player);
+}
+
+void ASTUGameStateBase::RemovePlayer(ASTUPlayerCharacter* Player)
+{
+    if (!HasAuthority() || !Player)
+    {
+        return;
+    }
+
+    PlayerList.Remove(Player);
+}
+
 // Replication Notification Callbacks
 void ASTUGameStateBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -38,6 +59,7 @@ void ASTUGameStateBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
     DOREPLIFETIME(ASTUGameStateBase, CurrentRound);
     DOREPLIFETIME(ASTUGameStateBase, RoundCountDown);
     DOREPLIFETIME(ASTUGameStateBase, GameData);
+    DOREPLIFETIME(ASTUGameStateBase, PlayerList);
 }
 
 void ASTUGameStateBase::OnRep_MatchState()

@@ -7,6 +7,8 @@
 #include "STUCoreTypes.h"
 #include "STUGameStateBase.generated.h"
 
+class ASTUPlayerCharacter;
+
 UCLASS()
 class SHOOTTHEMUP_API ASTUGameStateBase : public AGameStateBase
 {
@@ -25,6 +27,12 @@ public:
 
     UPROPERTY(Replicated, BlueprintReadOnly, Category = "Game")
     FGameData GameData;
+
+    UPROPERTY(Replicated, BlueprintReadOnly, Category = "Game")
+    TArray<TObjectPtr<ASTUPlayerCharacter>> PlayerList;
+
+    UFUNCTION(BlueprintCallable, Category = "Game")
+    const TArray<ASTUPlayerCharacter*>& GetPlayerList() const { return PlayerList; }
 
     FOnMatchStateChangedSignature OnMatchStateChanged;
 
@@ -47,6 +55,10 @@ public:
     void SetRoundCountDown(int32 NewRoundCountDown);
 
     void SetGameData(const FGameData& NewGameData);
+
+    // Add/remove players on the server; list is AddUnique to avoid duplicates
+    void AddPlayer(ASTUPlayerCharacter* Player);
+    void RemovePlayer(ASTUPlayerCharacter* Player);
 
 protected:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

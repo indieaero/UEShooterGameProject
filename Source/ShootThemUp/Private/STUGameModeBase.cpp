@@ -12,6 +12,7 @@
 #include "Components/STUWeaponComponent.h"
 #include "EngineUtils.h"
 #include "STUGameStateBase.h"
+#include "Player/STUPlayerCharacter.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogSTUGameModeBase, All, All);
 
@@ -297,6 +298,25 @@ bool ASTUGameModeBase::ClearPause()
         SetMatchState(ESTUMatchState::InProgress);
     }
     return PauseCleared;
+}
+
+void ASTUGameModeBase::RestartPlayer(AController* NewPlayer)
+{
+    Super::RestartPlayer(NewPlayer);
+
+    SetPlayerColor(NewPlayer);
+
+    // Register player-controlled pawns in replicated GameState list for spectating.
+    if (NewPlayer->IsPlayerController())
+    {
+        if (ASTUGameStateBase* STUGameState = GetSTUGameState())
+        {
+            if (ASTUPlayerCharacter* PlayerCharacter = Cast<ASTUPlayerCharacter>(NewPlayer->GetPawn()))
+            {
+                STUGameState->AddPlayer(PlayerCharacter);
+            }
+        }
+    }
 }
 
 ASTUGameStateBase* ASTUGameModeBase::GetSTUGameState() const
