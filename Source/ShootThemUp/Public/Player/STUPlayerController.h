@@ -45,6 +45,13 @@ private:
     void OnMatchStateChanged(ESTUMatchState State);
     void OnMuteSound();
 
+    bool CanSpectate() const;
+
+    void OnFirePressed();
+    void OnFireReleased();
+    void OnZoomPressed();
+    void OnZoomReleased();
+
     // Current index into GameState PlayerList used for spectating
     UPROPERTY(Replicated)
     int32 CurrentSpectateIndex = INDEX_NONE;

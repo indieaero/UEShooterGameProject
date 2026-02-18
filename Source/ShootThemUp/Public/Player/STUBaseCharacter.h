@@ -1,4 +1,4 @@
-// Shoot Them Up Game, All Rights Reserved.
+﻿// Shoot Them Up Game, All Rights Reserved.
 
 #pragma once
 
@@ -73,6 +73,10 @@ public:
 
     UFUNCTION(Server, Unreliable)
     void ServerUpdateViewRotation(FRotator NewRotation);
+
+    //getter for Controller 
+    UFUNCTION(BlueprintCallable, Category = "Weapon")
+    USTUWeaponComponent* GetWeaponComponent() const { return WeaponComponent; }
 
 protected:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

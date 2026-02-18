@@ -6,7 +6,9 @@
 #include "STUGameInstance.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/STUPlayerCharacter.h"
+#include "Player/STUBaseCharacter.h"
 #include "Components/STUHealthComponent.h"
+#include "Components/STUWeaponComponent.h"
 #include "STUUtils.h"
 
 ASTUPlayerController::ASTUPlayerController()
@@ -82,8 +84,15 @@ void ASTUPlayerController::SetupInputComponent()
     InputComponent->BindAction("PauseGame", IE_Pressed, this, &ASTUPlayerController::OnPauseGame);
     InputComponent->BindAction("Mute", IE_Pressed, this, &ASTUPlayerController::OnMuteSound);
 
+    // spectate bindings on other buttons
     InputComponent->BindAction("SpectateNext", IE_Pressed, this, &ASTUPlayerController::SpectateNext);
     InputComponent->BindAction("SpectatePrev", IE_Pressed, this, &ASTUPlayerController::SpectatePrev);
+
+    // Fire & Zoom bindings
+    InputComponent->BindAction("Fire", IE_Pressed, this, &ASTUPlayerController::OnFirePressed);
+    InputComponent->BindAction("Fire", IE_Released, this, &ASTUPlayerController::OnFireReleased);
+    InputComponent->BindAction("Zoom", IE_Pressed, this, &ASTUPlayerController::OnZoomPressed);
+    InputComponent->BindAction("Zoom", IE_Released, this, &ASTUPlayerController::OnZoomReleased);
 }
 
 void ASTUPlayerController::OnPauseGame()
@@ -186,4 +195,61 @@ void ASTUPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
     DOREPLIFETIME(ASTUPlayerController, CurrentSpectateIndex);
+}
+
+bool ASTUPlayerController::CanSpectate() const
+{
+    // can spectate if no pawn (after death) or pawn is dead
+    APawn* PlayerPawn = GetPawn();
+    if (!PlayerPawn) return true;
+    const auto HealthComponent = STUUtils::GetSTUPlayerComponent<USTUHealthComponent>(PlayerPawn);
+    return !HealthComponent || HealthComponent->IsDead();
+}
+
+void ASTUPlayerController::OnFirePressed()
+{
+    if (CanSpectate())
+    {
+        SpectateNext();  
+        return;
+    }
+    if (ASTUBaseCharacter* BaseChar = Cast<ASTUBaseCharacter>(GetPawn()))
+    {
+        if (USTUWeaponComponent* WC = BaseChar->GetWeaponComponent()) 
+            WC->StartFire();
+    }
+}
+
+void ASTUPlayerController::OnFireReleased()
+{
+    if (CanSpectate()) return;
+    if (ASTUBaseCharacter* BaseChar = Cast<ASTUBaseCharacter>(GetPawn()))
+    {
+        if (USTUWeaponComponent* WC = BaseChar->GetWeaponComponent()) 
+            WC->StopFire();
+    }
+}
+
+void ASTUPlayerController::OnZoomPressed()
+{
+    if (CanSpectate())
+    {
+        SpectatePrev();
+        return;
+    }
+    if (ASTUBaseCharacter* BaseChar = Cast<ASTUBaseCharacter>(GetPawn()))
+    {
+        if (USTUWeaponComponent* WC = BaseChar->GetWeaponComponent()) 
+            WC->Zoom(true);
+    }
+}
+
+void ASTUPlayerController::OnZoomReleased()
+{
+    if (CanSpectate()) return;
+    if (ASTUBaseCharacter* BaseChar = Cast<ASTUBaseCharacter>(GetPawn()))
+    {
+        if (USTUWeaponComponent* WC = BaseChar->GetWeaponComponent()) 
+            WC->Zoom(false);
+    }
 }
