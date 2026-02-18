@@ -122,10 +122,7 @@ void ASTUPlayerCharacter::OnDeath()
 {
     Super::OnDeath();
     
-    if (Controller)
-    {
-        Controller->ChangeState(NAME_Spectating);
-    }
+    //if (Controller) Controller->ChangeState(NAME_Spectating);
 }
 
 void ASTUPlayerCharacter::OnCameraCollisionBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
