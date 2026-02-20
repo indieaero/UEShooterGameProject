@@ -1,4 +1,4 @@
-// Shoot Them Up Game, All Rights Reserved.
+﻿// Shoot Them Up Game, All Rights Reserved.
 
 #include "Pickups/STUBasePickup.h"
 #include "Components/SphereComponent.h"
@@ -29,7 +29,7 @@ void ASTUBasePickup::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 void ASTUBasePickup::OnRep_PickupTaken()
 {
     // Update visibility/collision on clients when pickup state replicates
-    if (bPickupTaken)
+    if (bPickupTaken && !HasAuthority())
     {
         if (CollisionComponent)
         {
@@ -38,6 +38,7 @@ void ASTUBasePickup::OnRep_PickupTaken()
         if (GetRootComponent())
         {
             GetRootComponent()->SetVisibility(false, true);
+            UGameplayStatics::PlaySoundAtLocation(GetWorld(), PickupTakenSound, GetActorLocation());
         }
     }
     else
