@@ -1,4 +1,4 @@
-// Shoot Them Up Game, All Rights Reserved.
+﻿// Shoot Them Up Game, All Rights Reserved.
 
 #pragma once
 
@@ -9,6 +9,7 @@
 #include "STUPlayerHUDWidget.generated.h"
 
 class UProgressBar;
+class USTUHealthComponent;
 
 UCLASS()
 class SHOOTTHEMUP_API USTUPlayerHUDWidget : public USTUBaseWidget
@@ -63,6 +64,14 @@ private:
     void OnNewPawn(APawn* NewPawn);
     void UpdateHealthBar();
 
+    // Callback for OnClientDamageTaken of HealthComponent. call OnTakeDamage() (damage image) only when the server explicitly
+    // reported damage through Client RPC, and not on any drop of health percentage in UpdateHealthBar
+    void OnDamageTakenForHUD();
+
     FTimerHandle HealthBarRefreshHandle;
     float LastKnownHealth = -1.0f;
+
+    // store the component and the subscription handle for OnClientDamageTaken
+    TWeakObjectPtr<USTUHealthComponent> CachedHealthComponent;
+    FDelegateHandle DamageTakenHandle;
 };

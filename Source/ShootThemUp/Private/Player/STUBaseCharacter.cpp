@@ -1,4 +1,4 @@
-// Shoot Them Up Game, All* Rights Reserved.
+﻿// Shoot Them Up Game, All* Rights Reserved.
 
 #include "Player/STUBaseCharacter.h"
 #include "Components/STUCharacterMovementComponent.h"
@@ -81,6 +81,15 @@ FRotator ASTUBaseCharacter::GetAimRotationRelativeToCharacter() const
     const FRotator AimWorld = GetBaseAimRotation();
     const FRotator BodyWorld = GetActorRotation();
     return (AimWorld - BodyWorld).GetNormalized();
+}
+
+// Called only on the client of the player who took damage 
+void ASTUBaseCharacter::ClientOnDamageTaken_Implementation() 
+{
+    if (HealthComponent)
+    {
+        HealthComponent->NotifyClientDamageTaken();
+    }
 }
 
 void ASTUBaseCharacter::ServerUpdateViewRotation_Implementation(FRotator NewRotation)

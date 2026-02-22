@@ -1,4 +1,4 @@
-// Shoot Them Up Game, All Rights Reserved.
+﻿// Shoot Them Up Game, All Rights Reserved.
 
 #include "Components/STUHealthComponent.h"
 #include "GameFramework/Character.h"
@@ -11,6 +11,7 @@
 #include "Engine/DamageEvents.h"
 #include "Perception/AISense_Damage.h"
 #include "Net/UnrealNetwork.h"
+#include "Player/STUBaseCharacter.h"
 
 DEFINE_LOG_CATEGORY_STATIC(logHealthComponent, All, All)
 
@@ -35,6 +36,13 @@ bool USTUHealthComponent::TryToAddHealth(float HealthAmount)
     return true;
 }
 
+// Called only on the damaged player's machine (from ClientOnDamageTaken_Implementation). trigger damage effects here
+void USTUHealthComponent::NotifyClientDamageTaken()
+{
+    PlayCameraShake();
+    OnClientDamageTaken.Broadcast(); // Damage taken image on the screen
+}
+
 void USTUHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const 
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -50,11 +58,7 @@ void USTUHealthComponent::OnRep_Health()
 
     OnHealthChanged.Broadcast(Health, HealthDelta);
 
-    if (!IsDead() && HealthDelta < 0.0f)
-    {
-        PlayCameraShake();
-    }
-
+    // damage effects only occur through Client RPC from ApplyDamage → ClientOnDamageTaken → NotifyClientDamageTaken().
     if (IsDead())
     {
         OnDeath.Broadcast();
@@ -168,7 +172,13 @@ void USTUHealthComponent::ApplyDamage(float Damage, AController* InstigatedBy)
         GetWorld()->GetTimerManager().SetTimer(HealTimerHandle, this, &USTUHealthComponent::HealUpdate, HealUpdateTime, true, HealDelay);
     }
 
-    PlayCameraShake();
+    //Server calls Client RPC to the character owner — on the client ClientOnDamageTaken_Implementation() →
+    // NotifyClientDamageTaken() → shake + OnClientDamageTaken (HUD)
+    if (ASTUBaseCharacter* OwnerCharacter = Cast<ASTUBaseCharacter>(GetOwner()))
+    {
+        OwnerCharacter->ClientOnDamageTaken();
+    }
+
     ReportDamageEvent(Damage, InstigatedBy);
 }
 

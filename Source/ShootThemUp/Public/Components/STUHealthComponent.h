@@ -23,6 +23,10 @@ public:
     FOnDeathSignature OnDeath;
     FOnHealthChangedSignature OnHealthChanged;
 
+    // Broadcasted only when ClientOnDamageTaken → NotifyClientDamageTaken() is executed on the client.
+    // Subscribing to this (HUD, etc.) damage effects only on real ApplyDamage on the server
+    FOnClientDamageTakenSignature OnClientDamageTaken;
+
     UFUNCTION(BlueprintCallable, Category = "Health")
     bool IsDead() const { return FMath::IsNearlyZero(Health); }
 
@@ -33,6 +37,10 @@ public:
     float GetHealth() const { return Health; }
 
     bool TryToAddHealth(float HealthAmount);
+
+    // Called only on the client from ClientOnDamageTaken_Implementation(). Does: PlayCameraShake() + OnClientDamageTaken.Broadcast()
+    // (HUD shows damage image by this delegate). Server doesn't call damage effects - only sends Client RPC to the character owner.
+    void NotifyClientDamageTaken();
 
 protected:
     // Create max health variable and can change it in Blueprints

@@ -1,4 +1,4 @@
-// Shoot Them Up Game, All Rights Reserved.
+﻿// Shoot Them Up Game, All Rights Reserved.
 
 #include "UI/STUPlayerHUDWidget.h"
 #include "Components/STUHealthComponent.h"
@@ -81,11 +81,34 @@ void USTUPlayerHUDWidget::NativeOnInitialized()
     }
 }
 
-void USTUPlayerHUDWidget::OnNewPawn(APawn*)
+// When changing the pawn (respawn, spectator), we unsubscribe from the old HealthComponent and subscribe to the new one. Now we show
+// the damage image only by the OnClientDamageTaken delegate (it is called from Client RPC after ApplyDamage on the server).
+void USTUPlayerHUDWidget::OnNewPawn(APawn* NewPawn)
 {
+    if (USTUHealthComponent* Prev = CachedHealthComponent.Get())
+    {
+        if (DamageTakenHandle.IsValid())
+        {
+            Prev->OnClientDamageTaken.Remove(DamageTakenHandle);
+            DamageTakenHandle.Reset();
+        }
+    }
+    CachedHealthComponent = nullptr;
+
+    if (NewPawn)
+    {
+        CachedHealthComponent = STUUtils::GetSTUPlayerComponent<USTUHealthComponent>(NewPawn);
+        if (CachedHealthComponent.IsValid())
+        {
+            DamageTakenHandle = CachedHealthComponent->OnClientDamageTaken.AddUObject(this, &USTUPlayerHUDWidget::OnDamageTakenForHUD);
+        }
+    }
+
     LastKnownHealth = -1.0f;
 }
 
+
+// update the bar and color
 void USTUPlayerHUDWidget::UpdateHealthBar()
 {
     const float Percent = GetHealthPercent();
@@ -95,12 +118,14 @@ void USTUPlayerHUDWidget::UpdateHealthBar()
         HealthProgressBar->SetPercent(Percent);
         HealthProgressBar->SetFillColorAndOpacity(Percent > PercentColorThreshold ? GoodColor : BadColor);
     }
-
-    if (LastKnownHealth >= 0.0f && Percent < LastKnownHealth - KINDA_SMALL_NUMBER)
-    {
-        OnTakeDamage();
-    }
     LastKnownHealth = Percent;
+}
+
+// Called by the OnClientDamageTaken delegate, the server confirmed the damage (Client RPC). We run a
+// Blueprint event to display the damage image
+void USTUPlayerHUDWidget::OnDamageTakenForHUD()
+{
+    OnTakeDamage();
 }
 
 int32 USTUPlayerHUDWidget::GetKillsNum() const

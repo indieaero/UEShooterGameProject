@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "STUCoreTypes.generated.h"
 
 //Weapon
@@ -51,6 +51,9 @@ struct FWeaponUIData
 
 DECLARE_MULTICAST_DELEGATE(FOnDeathSignature);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnHealthChangedSignature, float, float);
+
+// delegate for HUD and effects, called RPC from server after damage 
+DECLARE_MULTICAST_DELEGATE(FOnClientDamageTakenSignature);
 
 
 //VFX

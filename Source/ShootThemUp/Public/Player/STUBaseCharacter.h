@@ -74,6 +74,10 @@ public:
     UFUNCTION(Server, Unreliable)
     void ServerUpdateViewRotation(FRotator NewRotation);
 
+    // Client RPC
+    UFUNCTION(Client, Reliable)
+    void ClientOnDamageTaken();
+
     //getter for Controller 
     UFUNCTION(BlueprintCallable, Category = "Weapon")
     USTUWeaponComponent* GetWeaponComponent() const { return WeaponComponent; }
@@ -88,7 +92,7 @@ protected:
     UPROPERTY(Replicated)
     FRotator ReplicatedViewRotation = FRotator::ZeroRotator;
 
-    /** Set after first ServerUpdateViewRotation; until then GetBaseAimRotation returns horizontal for remote pawns. */
+    //Set after first ServerUpdateViewRotation; until then GetBaseAimRotation returns horizontal for remote pawns
     UPROPERTY(Replicated)
     bool bReplicatedViewRotationSet = false;
 
