@@ -1,4 +1,4 @@
-// Shoot Them Up Game, All Rights Reserved.
+﻿// Shoot Them Up Game, All Rights Reserved.
 
 #pragma once
 
@@ -10,6 +10,8 @@ class USTUWeaponFXComponent;
 class UNiagaraComponent;
 class UNiagaraSystem;
 class UAudioComponent;
+
+class UCameraShakeBase;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnShotHitSignature, const FHitResult&, HitResult);
 
@@ -50,6 +52,15 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
     float FOVZoomAngle = 50.0f;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
+    float RecoilPitchPerShot = 0.1f;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
+    float RecoilYawRandom = 0.1f;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "VFX");
+    TSubclassOf<UCameraShakeBase> CameraShake;
+
     virtual void BeginPlay() override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
     virtual void MakeShot() override;
@@ -77,6 +88,7 @@ private:
     void InitFX();
     void SetFXActive(bool IsActive);
     void SpawnTraceFX(const FVector& TraceStart, const FVector& TraceEnd);
+    void PlayRifleCameraShake();
 
     AController* GetController() const;
 

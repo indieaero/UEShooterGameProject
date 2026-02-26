@@ -73,6 +73,12 @@ void ASTUPlayerController::OnPossess(APawn* InPawn)
         SetControlRotation(HorizontalView);
     }
 
+    // Reset recoil state on new pawn
+    RecoilTargetPitch = 0.0f;
+    RecoilTargetYaw = 0.0f;
+    RecoilCurrentPitch = 0.0f;
+    RecoilCurrentYaw = 0.0f;
+
     OnNewPawn.Broadcast(InPawn);
 }
 
@@ -93,6 +99,12 @@ void ASTUPlayerController::SetupInputComponent()
     InputComponent->BindAction("Fire", IE_Released, this, &ASTUPlayerController::OnFireReleased);
     InputComponent->BindAction("Zoom", IE_Pressed, this, &ASTUPlayerController::OnZoomPressed);
     InputComponent->BindAction("Zoom", IE_Released, this, &ASTUPlayerController::OnZoomReleased);
+}
+
+void ASTUPlayerController::Tick(float DeltaSeconds)
+{
+    Super::Tick(DeltaSeconds);
+    UpdateRecoil(DeltaSeconds);
 }
 
 void ASTUPlayerController::OnPauseGame()
@@ -252,4 +264,42 @@ void ASTUPlayerController::OnZoomReleased()
         if (USTUWeaponComponent* WC = BaseChar->GetWeaponComponent()) 
             WC->Zoom(false);
     }
+}
+
+void ASTUPlayerController::UpdateRecoil(float DeltaSeconds)
+{
+    if (!IsLocalController()) return;
+    if (CanSpectate()) return;
+
+    // Move current recoil toward target smoothly
+    const float NewPitch = FMath::FInterpTo(RecoilCurrentPitch, RecoilTargetPitch, DeltaSeconds, RecoilInterpSpeed);
+    const float NewYaw = FMath::FInterpTo(RecoilCurrentYaw, RecoilTargetYaw, DeltaSeconds, RecoilInterpSpeed);
+
+    const float DeltaPitch = NewPitch - RecoilCurrentPitch;
+    const float DeltaYaw = NewYaw - RecoilCurrentYaw;
+
+    if (!FMath::IsNearlyZero(DeltaPitch) || !FMath::IsNearlyZero(DeltaYaw))
+    {
+        FRotator ControlRot = GetControlRotation();
+
+        // Apply only the incremental recoil delta this frame
+        ControlRot.Pitch -= DeltaPitch;  // positive target pitch means looking higher
+        ControlRot.Yaw += DeltaYaw;
+
+        SetControlRotation(ControlRot);
+
+        RecoilCurrentPitch = NewPitch;
+        RecoilCurrentYaw = NewYaw;
+    }
+}
+
+void ASTUPlayerController::ApplyRecoil(float PitchAmount, float YawAmount) 
+{
+    if (CanSpectate()) return;
+    //only local player
+    if (!IsLocalController()) return;
+
+    // Increase target recoil; Tick will smoothly apply it to control rotation
+    RecoilTargetPitch += PitchAmount;
+    RecoilTargetYaw += YawAmount;
 }

@@ -1,4 +1,4 @@
-// Shoot Them Up Game, All Rights Reserved.
+﻿// Shoot Them Up Game, All Rights Reserved.
 
 #include "Weapon/STURifleWeapon.h"
 #include "Engine/World.h"
@@ -11,6 +11,7 @@
 #include "Sound/SoundCue.h"
 #include "Components/AudioComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "Player/STUPlayerController.h"
 
 ASTURifleWeapon::ASTURifleWeapon()
 {
@@ -120,8 +121,18 @@ void ASTURifleWeapon::MulticastPlayShotFX_Implementation(const FVector& TraceSta
     const APawn* OwnerPawn = Cast<APawn>(GetOwner());
     if (OwnerPawn && OwnerPawn->IsLocallyControlled())
     {
+        //recoil only for the shooting player
+        if (ASTUPlayerController* PC = Cast<ASTUPlayerController>(OwnerPawn->GetController()))
+        {
+            const float PitchRecoil = RecoilPitchPerShot;
+            const float YawRecoil = FMath::RandRange(-RecoilYawRandom, RecoilYawRandom);
+            PC->ApplyRecoil(PitchRecoil, YawRecoil);
+        }
+
         FXTraceStart = GetMuzzleWorldLocation();
+        PlayRifleCameraShake();
     }
+
     SpawnTraceFX(FXTraceStart, TraceEnd);
     if (bBlockingHit && WeaponFXComponent)
     {
@@ -202,6 +213,17 @@ void ASTURifleWeapon::SpawnTraceFX(const FVector& TraceStart, const FVector& Tra
     {
         TraceFXComponent->SetNiagaraVariableVec3(TraceTargetName, TraceEnd); 
     }
+}
+
+void ASTURifleWeapon::PlayRifleCameraShake() 
+{
+    const auto Player = Cast<APawn>(GetOwner());
+    if (!Player) return;
+
+    const auto Controller = Player->GetController<APlayerController>();
+    if (!Controller || !Controller->PlayerCameraManager) return;
+
+    Controller->PlayerCameraManager->StartCameraShake(CameraShake);
 }
 
 AController* ASTURifleWeapon::GetController() const
