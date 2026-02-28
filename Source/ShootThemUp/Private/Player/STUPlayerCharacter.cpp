@@ -110,12 +110,14 @@ void ASTUPlayerCharacter::OnStopRunning()
 
 bool ASTUPlayerCharacter::IsRunning() const
 {
-    const FVector Velocity = GetVelocity(); //current character speed from CharacterMovementComponent
+    const FVector Velocity = GetVelocity();
     const float Speed = Velocity.Size();
+    if (!WantsToRun || Speed < KINDA_SMALL_NUMBER) return false;
 
-    const bool bIsMoving = Speed > 0.0f;  //server check if character is moving
-
-    return WantsToRun && bIsMoving;
+    // Run only when moving primarily forward (W)
+    const float ForwardDot = FVector::DotProduct(Velocity.GetSafeNormal(), GetActorForwardVector());
+    constexpr float MinForwardDot = 0.7f;  // 0 = any direction, 1 = strictly forward
+    return ForwardDot >= MinForwardDot;
 }
 
 void ASTUPlayerCharacter::OnDeath()
