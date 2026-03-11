@@ -22,6 +22,9 @@ public:
     UFUNCTION(Server, Reliable)
     void ServerSetRunning(bool bNewRunning);
 
+    UFUNCTION(BlueprintImplementableEvent, Category = "Zoom")
+    void OnZoomStateChanged(bool bIsZooming);
+
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
     USpringArmComponent* SpringArmComponent;

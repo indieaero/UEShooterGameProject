@@ -253,6 +253,11 @@ void ASTUPlayerController::OnZoomPressed()
     {
         if (USTUWeaponComponent* WC = BaseChar->GetWeaponComponent()) 
             WC->Zoom(true);
+
+        if (ASTUPlayerCharacter* PlayerChar = Cast<ASTUPlayerCharacter>(BaseChar))
+        {
+            PlayerChar->OnZoomStateChanged(true);
+        }
     }
 }
 
@@ -263,6 +268,11 @@ void ASTUPlayerController::OnZoomReleased()
     {
         if (USTUWeaponComponent* WC = BaseChar->GetWeaponComponent()) 
             WC->Zoom(false);
+
+        if (ASTUPlayerCharacter* PlayerChar = Cast<ASTUPlayerCharacter>(BaseChar))
+        {
+            PlayerChar->OnZoomStateChanged(false);
+        }
     }
 }
 
