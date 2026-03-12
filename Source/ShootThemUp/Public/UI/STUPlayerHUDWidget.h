@@ -1,4 +1,4 @@
-﻿// Shoot Them Up Game, All Rights Reserved.
+// Shoot Them Up Game, All Rights Reserved.
 
 #pragma once
 
@@ -10,6 +10,7 @@
 
 class UProgressBar;
 class USTUHealthComponent;
+class USTUStaminaComponent;
 
 UCLASS()
 class SHOOTTHEMUP_API USTUPlayerHUDWidget : public USTUBaseWidget
@@ -19,6 +20,12 @@ class SHOOTTHEMUP_API USTUPlayerHUDWidget : public USTUBaseWidget
 public:
     UFUNCTION(BlueprintCallable, Category = "UI")
     float GetHealthPercent() const;
+
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    float GetStaminaPercent() const;
+
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    bool ShouldShowStaminaBar() const;
 
     UFUNCTION(BlueprintCallable, Category = "UI")
     bool GetCurrentWeaponUIData(FWeaponUIData& UIData) const;
@@ -48,6 +55,9 @@ protected:
     UPROPERTY(meta = (BindWidget))
     UProgressBar* HealthProgressBar;
 
+    UPROPERTY(meta = (BindWidgetOptional))
+    UProgressBar* StaminaProgressBar;
+
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI")
     float PercentColorThreshold = 0.3f;
 
@@ -63,6 +73,7 @@ protected:
 private:
     void OnNewPawn(APawn* NewPawn);
     void UpdateHealthBar();
+    void UpdateStaminaBar();
 
     // Callback for OnClientDamageTaken of HealthComponent. call OnTakeDamage() (damage image) only when the server explicitly
     // reported damage through Client RPC, and not on any drop of health percentage in UpdateHealthBar

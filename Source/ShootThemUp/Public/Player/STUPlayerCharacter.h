@@ -1,4 +1,4 @@
-﻿// Shoot Them Up Game, All Rights Reserved.
+// Shoot Them Up Game, All Rights Reserved.
 
 #pragma once
 
@@ -9,6 +9,7 @@
 class UCameraComponent;
 class USpringArmComponent;
 class USphereComponent;
+class USTUStaminaComponent;
 
 UCLASS()
 class SHOOTTHEMUP_API ASTUPlayerCharacter : public ASTUBaseCharacter
@@ -35,6 +36,9 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
     USphereComponent* CameraCollisionComponent;
 
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+    USTUStaminaComponent* StaminaComponent;
+
     virtual void OnDeath() override;
     virtual void BeginPlay() override;
 
@@ -43,8 +47,11 @@ protected:
 
 public:
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+    virtual void Tick(float DeltaTime) override;
 
     virtual bool IsRunning() const override;
+
+    USTUStaminaComponent* GetStaminaComponent() const { return StaminaComponent; }
 
 private:
     UPROPERTY(Replicated)
@@ -58,6 +65,7 @@ private:
 
     void OnStartRunning();
     void OnStopRunning();
+    void OnStaminaDepleted();
 
     UFUNCTION()
     void OnCameraCollisionBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,

@@ -1,7 +1,8 @@
-﻿// Shoot Them Up Game, All Rights Reserved.
+// Shoot Them Up Game, All Rights Reserved.
 
 #include "UI/STUPlayerHUDWidget.h"
 #include "Components/STUHealthComponent.h"
+#include "Components/STUStaminaComponent.h"
 #include "Components/STUWeaponComponent.h"
 #include "Components/STURespawnComponent.h"
 #include "GameFramework/Pawn.h"
@@ -16,6 +17,20 @@ float USTUPlayerHUDWidget::GetHealthPercent() const
     if (!HealthComponent) return 0.0f;
 
     return HealthComponent->GetHealthPercent();
+}
+
+float USTUPlayerHUDWidget::GetStaminaPercent() const
+{
+    const auto StaminaComponent = STUUtils::GetSTUPlayerComponent<USTUStaminaComponent>(GetOwningPlayerPawn());
+    if (!StaminaComponent) return 1.0f;
+
+    return StaminaComponent->GetStaminaPercent();
+}
+
+bool USTUPlayerHUDWidget::ShouldShowStaminaBar() const
+{
+    const auto StaminaComponent = STUUtils::GetSTUPlayerComponent<USTUStaminaComponent>(GetOwningPlayerPawn());
+    return StaminaComponent && StaminaComponent->ShouldShowStaminaBar();
 }
 
 bool USTUPlayerHUDWidget::GetCurrentWeaponUIData(FWeaponUIData& UIData) const
@@ -119,6 +134,22 @@ void USTUPlayerHUDWidget::UpdateHealthBar()
         HealthProgressBar->SetFillColorAndOpacity(Percent > PercentColorThreshold ? GoodColor : BadColor);
     }
     LastKnownHealth = Percent;
+
+    UpdateStaminaBar();
+}
+
+void USTUPlayerHUDWidget::UpdateStaminaBar()
+{
+    if (!StaminaProgressBar) return;
+
+    const bool bShow = ShouldShowStaminaBar();
+    StaminaProgressBar->SetVisibility(bShow ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+
+    if (bShow)
+    {
+        StaminaProgressBar->SetPercent(GetStaminaPercent());
+        StaminaProgressBar->SetFillColorAndOpacity(FLinearColor(0.2f, 0.6f, 1.0f, 0.6f));  // Blue, semi-transparent
+    }
 }
 
 // Called by the OnClientDamageTaken delegate, the server confirmed the damage (Client RPC). We run a

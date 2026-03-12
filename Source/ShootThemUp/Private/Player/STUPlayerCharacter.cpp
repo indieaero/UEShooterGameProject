@@ -1,8 +1,9 @@
-﻿// Shoot Them Up Game, All Rights Reserved.
+// Shoot Them Up Game, All Rights Reserved.
 
 #include "Player/STUPlayerCharacter.h"
 #include "Camera/CameraComponent.h"
 #include "Components/InputComponent.h"
+#include "Components/STUStaminaComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/STUWeaponComponent.h"
@@ -28,6 +29,8 @@ ASTUPlayerCharacter::ASTUPlayerCharacter(const FObjectInitializer& ObjInit) : Su
     CameraCollisionComponent->SetupAttachment(CameraComponent);
     CameraCollisionComponent->SetSphereRadius(10.0f);
     CameraCollisionComponent->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
+
+    StaminaComponent = CreateDefaultSubobject<USTUStaminaComponent>("StaminaComponent");
 }
 
 void ASTUPlayerCharacter::ServerSetRunning_Implementation(bool bNewRunning)
@@ -39,10 +42,15 @@ void ASTUPlayerCharacter::BeginPlay()
 {
     Super::BeginPlay();
 
-    check(CameraCollisionComponent)
+    check(CameraCollisionComponent);
 
     CameraCollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &ASTUPlayerCharacter::OnCameraCollisionBeginOverlap);
     CameraCollisionComponent->OnComponentEndOverlap.AddDynamic(this, &ASTUPlayerCharacter::OnCameraCollisionEndOverlap);
+
+    if (StaminaComponent)
+    {
+        StaminaComponent->OnStaminaDepleted.AddUObject(this, &ASTUPlayerCharacter::OnStaminaDepleted);
+    }
 }
 
 void ASTUPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const 
@@ -98,6 +106,8 @@ void ASTUPlayerCharacter::CheckAndJump()
 
 void ASTUPlayerCharacter::OnStartRunning()
 {
+    if (StaminaComponent && !StaminaComponent->CanRun()) return;
+
     WantsToRun = true;
     ServerSetRunning(WantsToRun);
 }
@@ -110,6 +120,8 @@ void ASTUPlayerCharacter::OnStopRunning()
 
 bool ASTUPlayerCharacter::IsRunning() const
 {
+    if (StaminaComponent && !StaminaComponent->CanRun()) return false;
+
     const FVector Velocity = GetVelocity();
     const float Speed = Velocity.Size();
     if (!WantsToRun || Speed < KINDA_SMALL_NUMBER) return false;
@@ -120,10 +132,35 @@ bool ASTUPlayerCharacter::IsRunning() const
     return ForwardDot >= MinForwardDot;
 }
 
+void ASTUPlayerCharacter::Tick(float DeltaTime)
+{
+    Super::Tick(DeltaTime);
+
+    if (StaminaComponent)
+    {
+        const FVector Velocity = GetVelocity();
+        const float Speed = Velocity.Size();
+        const bool bWantsToRunAndMoving = WantsToRun && Speed >= KINDA_SMALL_NUMBER;
+        const float ForwardDot = bWantsToRunAndMoving
+            ? FVector::DotProduct(Velocity.GetSafeNormal(), GetActorForwardVector())
+            : 0.0f;
+        constexpr float MinForwardDot = 0.7f;
+        const bool bMovingForward = ForwardDot >= MinForwardDot;
+
+        StaminaComponent->UpdateStamina(DeltaTime, bWantsToRunAndMoving && bMovingForward);
+    }
+}
+
+void ASTUPlayerCharacter::OnStaminaDepleted()
+{
+    WantsToRun = false;
+    ServerSetRunning(false);
+}
+
 void ASTUPlayerCharacter::OnDeath()
 {
     Super::OnDeath();
-    
+
     //if (Controller) Controller->ChangeState(NAME_Spectating);
 }
 
