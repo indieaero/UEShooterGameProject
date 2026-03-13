@@ -10,6 +10,7 @@ class UCameraComponent;
 class USpringArmComponent;
 class USphereComponent;
 class USTUStaminaComponent;
+class UMaterialInterface;
 
 UCLASS()
 class SHOOTTHEMUP_API ASTUPlayerCharacter : public ASTUBaseCharacter
@@ -38,6 +39,14 @@ protected:
 
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
     USTUStaminaComponent* StaminaComponent;
+
+    /** Post-process material (e.g. M_RunBlur_Inst) applied to camera when running */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "VFX")
+    UMaterialInterface* RunBlurMaterial;
+
+    /** Post-process material (e.g. M_PlayerDeath) applied to camera when player dies */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "VFX")
+    UMaterialInterface* DeathPostProcessMaterial;
 
     virtual void OnDeath() override;
     virtual void BeginPlay() override;

@@ -4,8 +4,10 @@
 #include "Camera/CameraComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/STUStaminaComponent.h"
+#include "Engine/Scene.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Materials/MaterialInterface.h"
 #include "Components/STUWeaponComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -50,6 +52,26 @@ void ASTUPlayerCharacter::BeginPlay()
     if (StaminaComponent)
     {
         StaminaComponent->OnStaminaDepleted.AddUObject(this, &ASTUPlayerCharacter::OnStaminaDepleted);
+    }
+
+    // Add run blur post-process to camera
+    if (CameraComponent && RunBlurMaterial)
+    {
+        FWeightedBlendable Blendable;
+        Blendable.Object = RunBlurMaterial;
+        Blendable.Weight = 0.0f;
+        CameraComponent->PostProcessSettings.WeightedBlendables.Array.Add(Blendable);
+        CameraComponent->PostProcessBlendWeight = 1.0f;
+    }
+
+    // Add death post-process to camera (weight set in OnDeath)
+    if (CameraComponent && DeathPostProcessMaterial)
+    {
+        FWeightedBlendable Blendable;
+        Blendable.Object = DeathPostProcessMaterial;
+        Blendable.Weight = 0.0f;
+        CameraComponent->PostProcessSettings.WeightedBlendables.Array.Add(Blendable);
+        CameraComponent->PostProcessBlendWeight = 1.0f;
     }
 }
 
@@ -136,6 +158,19 @@ void ASTUPlayerCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 
+    // Update run blur post-process weight
+    if (CameraComponent && RunBlurMaterial)
+    {
+        for (FWeightedBlendable& Blendable : CameraComponent->PostProcessSettings.WeightedBlendables.Array)
+        {
+            if (Blendable.Object == RunBlurMaterial)
+            {
+                Blendable.Weight = IsRunning() ? 1.0f : 0.0f;
+                break;
+            }
+        }
+    }
+
     if (StaminaComponent)
     {
         const FVector Velocity = GetVelocity();
@@ -160,6 +195,19 @@ void ASTUPlayerCharacter::OnStaminaDepleted()
 void ASTUPlayerCharacter::OnDeath()
 {
     Super::OnDeath();
+
+    // Apply death post-process to camera
+    if (CameraComponent && DeathPostProcessMaterial)
+    {
+        for (FWeightedBlendable& Blendable : CameraComponent->PostProcessSettings.WeightedBlendables.Array)
+        {
+            if (Blendable.Object == DeathPostProcessMaterial)
+            {
+                Blendable.Weight = 1.0f;
+                break;
+            }
+        }
+    }
 
     //if (Controller) Controller->ChangeState(NAME_Spectating);
 }
