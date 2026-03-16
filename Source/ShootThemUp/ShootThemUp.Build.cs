@@ -17,8 +17,9 @@ public class ShootThemUp : ModuleRules
 			"Niagara",
 			"PhysicsCore",
 			"GameplayTasks",
-			"NavigationSystem"
-
+			"NavigationSystem",
+			"FieldSystemEngine",
+			"GeometryCollectionEngine"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { "CADKernel" });
@@ -41,6 +42,7 @@ public class ShootThemUp : ModuleRules
 			"ShootThemUp/Public/Menu",
 			"ShootThemUp/Public/Menu/UI",
             "ShootThemUp/Public/Sound",
+			"ShootThemUp/Public/Environment",
         });
 
 		// Uncomment if you are using Slate UI
