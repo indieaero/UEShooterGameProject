@@ -310,6 +310,6 @@ void ASTUPlayerController::ApplyRecoil(float PitchAmount, float YawAmount)
     if (!IsLocalController()) return;
 
     // Increase target recoil; Tick will smoothly apply it to control rotation
-    RecoilTargetPitch += PitchAmount;
+    RecoilTargetPitch -= PitchAmount;
     RecoilTargetYaw += YawAmount;
 }

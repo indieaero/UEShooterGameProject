@@ -4,6 +4,7 @@
 #include "STUProjectile.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
+#include "Player/STUPlayerController.h"
 
 void ASTULauncherWeapon::StartFire()
 {
@@ -46,8 +47,30 @@ void ASTULauncherWeapon::MakeShot()
     MulticastPlayFireFX();
 }
 
+void ASTULauncherWeapon::PlayLauncherCameraShake() 
+{
+    const auto Player = Cast<APawn>(GetOwner());
+    if (!Player) return;
+
+    const auto Controller = Player->GetController<APlayerController>();
+    if (!Controller || !Controller->PlayerCameraManager) return;
+
+    Controller->PlayerCameraManager->StartCameraShake(CameraShake);
+}
+
 void ASTULauncherWeapon::MulticastPlayFireFX_Implementation()
 {
+    const APawn* OwnerPawn = Cast<APawn>(GetOwner());
+    if (OwnerPawn && OwnerPawn->IsLocallyControlled())
+    {
+        if (ASTUPlayerController* PC = Cast<ASTUPlayerController>(OwnerPawn->GetController()))
+        {
+            const float PitchRecoil = RecoilPitchPerShot;
+            const float YawRecoil = FMath::RandRange(-RecoilYawRandom, RecoilYawRandom);
+            PC->ApplyRecoil(PitchRecoil, YawRecoil);
+        }
+    }
+
     // Clients play muzzle FX and sound (server already did in MakeShot)
     if (!HasAuthority())
     {
@@ -57,4 +80,6 @@ void ASTULauncherWeapon::MulticastPlayFireFX_Implementation()
             UGameplayStatics::SpawnSoundAttached(FireSound, WeaponMesh, MuzzleSocketName);
         }
     }
+
+    PlayLauncherCameraShake();
 }

@@ -8,6 +8,7 @@
 
 class ASTUProjectile;
 class USoundCue;
+class UCameraShakeBase;
 
 UCLASS()
 class SHOOTTHEMUP_API ASTULauncherWeapon : public ASTUBaseWeapon
@@ -27,5 +28,17 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
     USoundCue* NoAmmoSound;
 
-      virtual void MakeShot() override;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
+    float RecoilPitchPerShot = 0.35f;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
+    float RecoilYawRandom = 0.15f;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "VFX");
+    TSubclassOf<UCameraShakeBase> CameraShake;
+
+    virtual void MakeShot() override;
+
+private:
+    void PlayLauncherCameraShake();
 };
