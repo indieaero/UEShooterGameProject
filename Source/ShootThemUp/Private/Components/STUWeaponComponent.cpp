@@ -354,6 +354,11 @@ void USTUWeaponComponent::MulticastPlayEquipAnim_Implementation()
 
 void USTUWeaponComponent::MulticastPlayReloadAnim_Implementation(UAnimMontage* ReloadMontage)
 {
+    if (const auto Character = Cast<ASTUBaseCharacter>(GetOwner()))
+    {
+        Character->PlayPlayerReloadSound();
+    }
+
     // Clients play reload anim (server already did)
     if (GetOwner() && !GetOwner()->HasAuthority() && ReloadMontage)
     {

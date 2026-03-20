@@ -1,4 +1,4 @@
-﻿// Shoot Them Up Game, All* Rights Reserved.
+// Shoot Them Up Game, All* Rights Reserved.
 
 #include "Player/STUBaseCharacter.h"
 #include "Components/STUCharacterMovementComponent.h"
@@ -51,6 +51,12 @@ void ASTUBaseCharacter::BeginPlay()
     {
         ServerUpdateViewRotation(GetControlRotation());
     }
+
+    if (PlayerSpawnSound && GetNetMode() != NM_DedicatedServer)
+    {
+        // Attach spawn voice to character so it follows movement during playback.
+        UGameplayStatics::SpawnSoundAttached(PlayerSpawnSound, GetRootComponent());
+    }
 }
 
 void ASTUBaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -92,6 +98,22 @@ void ASTUBaseCharacter::ClientOnDamageTaken_Implementation()
     }
 }
 
+void ASTUBaseCharacter::MulticastPlayPlayerDeathSound_Implementation()
+{
+    if (PlayerDeathSound && GetNetMode() != NM_DedicatedServer)
+    {
+        UGameplayStatics::SpawnSoundAttached(PlayerDeathSound, GetRootComponent());
+    }
+}
+
+void ASTUBaseCharacter::MulticastPlayPlayerHitPainSound_Implementation()
+{
+    if (PlayerHitPainSound && GetNetMode() != NM_DedicatedServer)
+    {
+        UGameplayStatics::SpawnSoundAttached(PlayerHitPainSound, GetRootComponent());
+    }
+}
+
 void ASTUBaseCharacter::ServerUpdateViewRotation_Implementation(FRotator NewRotation)
 {
     ReplicatedViewRotation = NewRotation;
@@ -112,7 +134,16 @@ void ASTUBaseCharacter::OnRep_TeamColor()
 
 void ASTUBaseCharacter::OnHealthChanged(float Health, float HealthDelta)
 {
-
+    // Play hit pain voice only for real damage ticks and only while alive.
+    if (HasAuthority() && HealthDelta < 0.0f && Health > 0.0f)
+    {
+        const float CurrentTime = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0f;
+        if (CurrentTime - LastPlayerHitPainSoundTime >= PlayerHitPainSoundCooldown)
+        {
+            LastPlayerHitPainSoundTime = CurrentTime;
+            MulticastPlayPlayerHitPainSound();
+        }
+    }
 }
 
 void ASTUBaseCharacter::OnGroundLanded(const FHitResult& Hit)
@@ -179,6 +210,14 @@ float ASTUBaseCharacter::GetMovementDirection() const
     return CrossProduct.IsZero() ? Degrees : Degrees * FMath::Sign(CrossProduct.Z);
 }
 
+void ASTUBaseCharacter::PlayPlayerReloadSound()
+{
+    if (PlayerReloadSound && GetNetMode() != NM_DedicatedServer)
+    {
+        UGameplayStatics::SpawnSoundAttached(PlayerReloadSound, GetRootComponent());
+    }
+}
+
 void ASTUBaseCharacter::SetPlayerColor(const FLinearColor& Color)
 {
     TeamColor = Color;
@@ -212,5 +251,10 @@ void ASTUBaseCharacter::OnDeath()
     GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
     GetMesh()->SetSimulatePhysics(true);
 
-    UGameplayStatics::PlaySoundAtLocation(GetWorld(), DeathSound, GetActorLocation());
+    if (HasAuthority())
+    {
+        MulticastPlayPlayerDeathSound();
+    }
+
+    UGameplayStatics::PlaySoundAtLocation(GetWorld(), DeathBodySound, GetActorLocation());
 }

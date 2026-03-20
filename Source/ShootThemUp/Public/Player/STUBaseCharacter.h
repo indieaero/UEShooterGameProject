@@ -1,4 +1,4 @@
-﻿// Shoot Them Up Game, All Rights Reserved.
+// Shoot Them Up Game, All Rights Reserved.
 
 #pragma once
 
@@ -43,7 +43,22 @@ protected:
     FName MaterialColorName = "Paint Color";
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
-    USoundCue* DeathSound;
+    USoundCue* DeathBodySound;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
+    USoundCue* PlayerSpawnSound;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
+    USoundCue* PlayerReloadSound;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
+    USoundCue* PlayerDeathSound;
+    
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
+    USoundCue* PlayerHitPainSound;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
+    float PlayerHitPainSoundCooldown = 2.5f;
 
     // Called when the game starts or when spawned
     virtual void BeginPlay() override;
@@ -62,6 +77,8 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Movement")
     float GetMovementDirection() const;
 
+    void PlayPlayerReloadSound();
+
     void SetPlayerColor(const FLinearColor& Color);
 
     /** Aim rotation; for remote pawns uses replicated value so weapon pose is correct in multiplayer. */
@@ -77,6 +94,11 @@ public:
     // Client RPC
     UFUNCTION(Client, Reliable)
     void ClientOnDamageTaken();
+
+    UFUNCTION(NetMulticast, Reliable)
+    void MulticastPlayPlayerDeathSound();
+    UFUNCTION(NetMulticast, Reliable)
+    void MulticastPlayPlayerHitPainSound();
 
     //getter for Controller 
     UFUNCTION(BlueprintCallable, Category = "Weapon")
@@ -100,6 +122,8 @@ protected:
     void OnRep_TeamColor();
 
 private:
+    float LastPlayerHitPainSoundTime = -1000.0f;
+
     UFUNCTION()
     void OnGroundLanded(const FHitResult& Hit);
 };
