@@ -30,6 +30,10 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Stamina")
     bool ShouldShowStaminaBar() const;
 
+    /** True during the cooldown after stamina hit 0, before recovery starts. */
+    UFUNCTION(BlueprintCallable, Category = "Stamina")
+    bool IsInRecoveryDelay() const { return bIsRecoveryDelayed; }
+
     /** Called each frame by owner. bWantsToRunAndMoving = WantsToRun && moving forward. */
     void UpdateStamina(float DeltaTime, bool bWantsToRunAndMoving);
 

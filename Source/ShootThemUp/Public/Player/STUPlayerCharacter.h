@@ -11,6 +11,7 @@ class USpringArmComponent;
 class USphereComponent;
 class USTUStaminaComponent;
 class UMaterialInterface;
+class UAudioComponent;
 
 UCLASS()
 class SHOOTTHEMUP_API ASTUPlayerCharacter : public ASTUBaseCharacter
@@ -84,4 +85,12 @@ private:
         UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
     void CheckCameraOverlap();
+
+    void UpdateRunningSounds();
+
+    UPROPERTY()
+    UAudioComponent* RunningVoiceComponent = nullptr;
+
+    UPROPERTY()
+    UAudioComponent* TiredVoiceComponent = nullptr;
 };

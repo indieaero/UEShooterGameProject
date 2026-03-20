@@ -2,16 +2,20 @@
 
 #include "Player/STUPlayerCharacter.h"
 #include "Camera/CameraComponent.h"
+#include "Components/AudioComponent.h"
 #include "Components/InputComponent.h"
+#include "Components/STUHealthComponent.h"
 #include "Components/STUStaminaComponent.h"
 #include "Engine/Scene.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInterface.h"
 #include "Components/STUWeaponComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "Sound/SoundCue.h"
 
 // Sets default values in constructor
 ASTUPlayerCharacter::ASTUPlayerCharacter(const FObjectInitializer& ObjInit) : Super(ObjInit)
@@ -183,6 +187,55 @@ void ASTUPlayerCharacter::Tick(float DeltaTime)
         const bool bMovingForward = ForwardDot >= MinForwardDot;
 
         StaminaComponent->UpdateStamina(DeltaTime, bWantsToRunAndMoving && bMovingForward);
+    }
+
+    UpdateRunningSounds();
+}
+
+void ASTUPlayerCharacter::UpdateRunningSounds()
+{
+    if (GetNetMode() == NM_DedicatedServer) return;
+    if (HealthComponent && HealthComponent->IsDead()) return;
+
+    const bool bRunning = IsRunning();
+    const bool bTired = StaminaComponent && StaminaComponent->IsInRecoveryDelay();
+
+    if (bRunning)
+    {
+        if (!RunningVoiceComponent && PlayerVoiceRunning)
+        {
+            RunningVoiceComponent = UGameplayStatics::SpawnSoundAttached(PlayerVoiceRunning, GetRootComponent());
+        }
+        if (TiredVoiceComponent)
+        {
+            TiredVoiceComponent->Stop();
+            TiredVoiceComponent = nullptr;
+        }
+    }
+    else if (bTired)
+    {
+        if (!TiredVoiceComponent && PlayerTiredRunning)
+        {
+            TiredVoiceComponent = UGameplayStatics::SpawnSoundAttached(PlayerTiredRunning, GetRootComponent());
+        }
+        if (RunningVoiceComponent)
+        {
+            RunningVoiceComponent->Stop();
+            RunningVoiceComponent = nullptr;
+        }
+    }
+    else
+    {
+        if (RunningVoiceComponent)
+        {
+            RunningVoiceComponent->Stop();
+            RunningVoiceComponent = nullptr;
+        }
+        if (TiredVoiceComponent)
+        {
+            TiredVoiceComponent->Stop();
+            TiredVoiceComponent = nullptr;
+        }
     }
 }
 
