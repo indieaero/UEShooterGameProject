@@ -1,4 +1,4 @@
-﻿// Shoot Them Up Game, All Rights Reserved.
+// Shoot Them Up Game, All Rights Reserved.
 
 
 #include "STUGameModeBase.h"
@@ -58,7 +58,7 @@ UClass* ASTUGameModeBase::GetDefaultPawnClassForController_Implementation(AContr
     return Super::GetDefaultPawnClassForController_Implementation(InController);
 }
 
-void ASTUGameModeBase::Killed(AController* KillerController, AController* VictimController) 
+void ASTUGameModeBase::Killed(AController* KillerController, AController* VictimController)
 {
     const auto KillerPlayerState = KillerController ? Cast<ASTUPlayerState>(KillerController->PlayerState) : nullptr;
     const auto VictimPlayerState = VictimController ? Cast<ASTUPlayerState>(VictimController->PlayerState) : nullptr;
@@ -71,6 +71,13 @@ void ASTUGameModeBase::Killed(AController* KillerController, AController* Victim
     if (VictimPlayerState)
     {
         VictimPlayerState->AddDeath();
+    }
+
+    if (ASTUGameStateBase* STUGameState = GetSTUGameState())
+    {
+        const FString KillerName = KillerPlayerState ? KillerPlayerState->GetPlayerName() : TEXT("Unknown");
+        const FString VictimName = VictimPlayerState ? VictimPlayerState->GetPlayerName() : TEXT("Unknown");
+        STUGameState->ReportKill(KillerName, VictimName);
     }
 
     StartRespawn(VictimController);

@@ -1,4 +1,4 @@
-﻿// Shoot Them Up Game, All Rights Reserved.
+// Shoot Them Up Game, All Rights Reserved.
 
 #pragma once
 
@@ -8,6 +8,9 @@
 #include "STUGameStateBase.generated.h"
 
 class ASTUPlayerCharacter;
+class UTexture2D;
+
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnKillFeedUpdatedSignature, const FString&, const FString&);
 
 UCLASS()
 class SHOOTTHEMUP_API ASTUGameStateBase : public AGameStateBase
@@ -28,6 +31,9 @@ public:
     UPROPERTY(Replicated, BlueprintReadOnly, Category = "Game")
     FGameData GameData;
 
+    UPROPERTY(ReplicatedUsing = OnRep_KillFeed, BlueprintReadOnly, Category = "Game")
+    TArray<FKillfeedEntry> KillFeedEntries;
+
     UPROPERTY(Replicated, BlueprintReadOnly, Category = "Game")
     TArray<TObjectPtr<ASTUPlayerCharacter>> PlayerList;
 
@@ -35,6 +41,8 @@ public:
     const TArray<ASTUPlayerCharacter*>& GetPlayerList() const { return PlayerList; }
 
     FOnMatchStateChangedSignature OnMatchStateChanged;
+
+    FOnKillFeedUpdatedSignature OnKillFeedUpdated;
 
     UFUNCTION(BlueprintCallable, Category = "Game")
     ESTUMatchState GetMatchState() const { return MatchState; }
@@ -60,9 +68,17 @@ public:
     void AddPlayer(ASTUPlayerCharacter* Player);
     void RemovePlayer(ASTUPlayerCharacter* Player);
 
+    void ReportKill(const FString& KillerName, const FString& VictimName, UTexture2D* WeaponIcon = nullptr);
+
 protected:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
     UFUNCTION()
     void OnRep_MatchState();
+
+    UFUNCTION()
+    void OnRep_KillFeed();
+
+private:
+    int32 LastReplicatedKillCount = 0;
 };

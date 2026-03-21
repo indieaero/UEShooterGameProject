@@ -1,8 +1,9 @@
-﻿// Shoot Them Up Game, All Rights Reserved.
+// Shoot Them Up Game, All Rights Reserved.
 
 #include "STUGameStateBase.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/STUPlayerCharacter.h"
+#include "Engine/Texture2D.h"
 
 ASTUGameStateBase::ASTUGameStateBase()
 {
@@ -60,9 +61,33 @@ void ASTUGameStateBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
     DOREPLIFETIME(ASTUGameStateBase, RoundCountDown);
     DOREPLIFETIME(ASTUGameStateBase, GameData);
     DOREPLIFETIME(ASTUGameStateBase, PlayerList);
+    DOREPLIFETIME(ASTUGameStateBase, KillFeedEntries);
 }
 
 void ASTUGameStateBase::OnRep_MatchState()
 {
     OnMatchStateChanged.Broadcast(MatchState);
+}
+
+void ASTUGameStateBase::ReportKill(const FString& KillerName, const FString& VictimName, UTexture2D* WeaponIcon)
+{
+    if (!HasAuthority()) return;
+
+    FKillfeedEntry Entry;
+    Entry.KillerName = FText::FromString(KillerName);
+    Entry.VictimName = FText::FromString(VictimName);
+    Entry.WeaponIcon = WeaponIcon;
+    KillFeedEntries.Add(Entry);
+
+    OnKillFeedUpdated.Broadcast(KillerName, VictimName);
+}
+
+void ASTUGameStateBase::OnRep_KillFeed()
+{
+    for (int32 i = LastReplicatedKillCount; i < KillFeedEntries.Num(); ++i)
+    {
+        const FKillfeedEntry& Entry = KillFeedEntries[i];
+        OnKillFeedUpdated.Broadcast(Entry.KillerName.ToString(), Entry.VictimName.ToString());
+    }
+    LastReplicatedKillCount = KillFeedEntries.Num();
 }

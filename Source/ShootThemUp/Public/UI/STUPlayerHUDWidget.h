@@ -11,6 +11,7 @@
 class UProgressBar;
 class USTUHealthComponent;
 class USTUStaminaComponent;
+class USTUKillfeedWidget;
 
 UCLASS()
 class SHOOTTHEMUP_API USTUPlayerHUDWidget : public USTUBaseWidget
@@ -57,6 +58,9 @@ protected:
 
     UPROPERTY(meta = (BindWidgetOptional))
     UProgressBar* StaminaProgressBar;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    USTUKillfeedWidget* KillfeedWidget;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI")
     float PercentColorThreshold = 0.3f;

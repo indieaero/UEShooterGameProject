@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "STUCoreTypes.generated.h"
 
 //Weapon
@@ -147,3 +147,18 @@ struct FLevelData
 };
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnLevelSelectedSignature, const FLevelData&);
+
+USTRUCT(BlueprintType)
+struct FKillfeedEntry
+{
+    GENERATED_USTRUCT_BODY()
+
+    UPROPERTY(BlueprintReadWrite, Category = "Game")
+    FText KillerName;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Game")
+    FText VictimName;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Game")
+    UTexture2D* WeaponIcon;
+};
