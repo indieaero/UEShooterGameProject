@@ -1,4 +1,4 @@
-﻿// Shoot Them Up Game, All Rights Reserved.
+// Shoot Them Up Game, All Rights Reserved.
 
 #include "UI/STUKillfeedWidget.h"
 #include "UI/STUKillfeedRowWidget.h"
@@ -47,7 +47,19 @@ void USTUKillfeedWidget::AddKillfeedEntry(const FText& KillerName, const FText& 
     KillfeedRowWidget->SetVictimName(VictimName);
     KillfeedRowWidget->SetWeaponIcon(WeaponIcon);
 
-    KillfeedBox->InsertChildAt(0, KillfeedRowWidget);
+    KillfeedBox->AddChild(KillfeedRowWidget);
+
+    while (KillfeedBox->GetChildrenCount() > MaxVisibleKillfeedRows)
+    {
+        if (UWidget* OldestRow = KillfeedBox->GetChildAt(0))
+        {
+            KillfeedBox->RemoveChild(OldestRow);
+        }
+        else
+        {
+            break;
+        }
+    }
 
     // TODO: Timer for 5–7 seconds to auto-remove the entry (RemoveChild + possible fade-out)
 }

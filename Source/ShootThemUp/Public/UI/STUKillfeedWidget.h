@@ -1,4 +1,4 @@
-﻿// Shoot Them Up Game, All Rights Reserved.
+// Shoot Them Up Game, All Rights Reserved.
 
 #pragma once
 
@@ -20,6 +20,9 @@ protected:
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI")
     TSubclassOf<UUserWidget> KillfeedRowWidgetClass;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI", meta = (ClampMin = "1"))
+    int32 MaxVisibleKillfeedRows = 6;
 
     virtual void NativeConstruct() override;
     virtual void NativeDestruct() override;
