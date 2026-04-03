@@ -12,6 +12,8 @@ class USphereComponent;
 class USTUStaminaComponent;
 class UMaterialInterface;
 class UAudioComponent;
+class UAnimMontage;
+class USkeletalMeshComponent;
 
 UCLASS()
 class SHOOTTHEMUP_API ASTUPlayerCharacter : public ASTUBaseCharacter
@@ -21,9 +23,21 @@ class SHOOTTHEMUP_API ASTUPlayerCharacter : public ASTUBaseCharacter
 public:
     ASTUPlayerCharacter(const FObjectInitializer& ObjInit);
 
+    UFUNCTION(BlueprintCallable, Category = "Animation")
+    bool CanKick() const;
+
+    UFUNCTION(BlueprintCallable, Category = "Animation")
+    void TryKick();
+
     // Server functions
     UFUNCTION(Server, Reliable)
     void ServerSetRunning(bool bNewRunning);
+
+    UFUNCTION(Server, Reliable)
+    void ServerTryKick();
+
+    UFUNCTION(NetMulticast, Reliable)
+    void MulticastPlayKickMontage();
 
     UFUNCTION(BlueprintImplementableEvent, Category = "Zoom")
     void OnZoomStateChanged(bool bIsZooming);
@@ -41,13 +55,20 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
     USTUStaminaComponent* StaminaComponent;
 
-    /** Post-process material (e.g. M_RunBlur_Inst) applied to camera when running */
+    // Post-process material (e.g. M_RunBlur_Inst) applied to camera when running 
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "VFX")
     UMaterialInterface* RunBlurMaterial;
 
-    /** Post-process material (e.g. M_PlayerDeath) applied to camera when player dies */
+    // Post-process material (e.g. M_PlayerDeath) applied to camera when player dies 
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "VFX")
     UMaterialInterface* DeathPostProcessMaterial;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
+    UAnimMontage* KickMontage = nullptr;
+
+    // Max horizontal speed (cm/s) on ground to count as "standing" for kick. 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation", meta = (ClampMin = "0.0"))
+    float KickIdleHorizontalSpeedThreshold = 15.0f;
 
     virtual void OnDeath() override;
     virtual void BeginPlay() override;
@@ -72,6 +93,13 @@ private:
     void MoveForward(float Amount);
     void MoveRight(float Amount);
     void CheckAndJump();
+    void OnKickPressed();
+
+    void InitKickNotify();
+    void OnKickMontageFinished(USkeletalMeshComponent* MeshComp);
+    void StartKickMontage();
+
+    bool KickAnimInProgress = false;
 
     void OnStartRunning();
     void OnStopRunning();

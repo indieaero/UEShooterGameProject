@@ -14,8 +14,12 @@
 #include "Components/STUWeaponComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Sound/SoundCue.h"
+#include "Animation/AnimMontage.h"
+#include "Animations/AnimUtils.h"
+#include "Animations/STUKickFinishedAnimNotify.h"
 
 // Sets default values in constructor
 ASTUPlayerCharacter::ASTUPlayerCharacter(const FObjectInitializer& ObjInit) : Super(ObjInit)
@@ -44,9 +48,87 @@ void ASTUPlayerCharacter::ServerSetRunning_Implementation(bool bNewRunning)
     WantsToRun = bNewRunning;
 }
 
+bool ASTUPlayerCharacter::CanKick() const
+{
+    if (!KickMontage) return false;
+    if (KickAnimInProgress) return false;
+    if (HealthComponent && HealthComponent->IsDead()) return false;
+
+    const UCharacterMovementComponent* Move = GetCharacterMovement();
+    if (!Move) return false;
+
+    if (Move->IsFalling()) return true;
+
+    if (!Move->IsMovingOnGround()) return false;
+    if (IsRunning()) return false;
+
+    const float Speed2D = FVector(GetVelocity().X, GetVelocity().Y, 0.0f).Size();
+    return Speed2D <= KickIdleHorizontalSpeedThreshold;
+}
+
+void ASTUPlayerCharacter::TryKick()
+{
+    if (!CanKick()) return;
+
+    if (HasAuthority())
+    {
+        StartKickMontage();
+    }
+    else
+    {
+        ServerTryKick();
+    }
+}
+
+void ASTUPlayerCharacter::StartKickMontage()
+{
+    KickAnimInProgress = true;
+    PlayAnimMontage(KickMontage);
+    MulticastPlayKickMontage();
+}
+
+void ASTUPlayerCharacter::ServerTryKick_Implementation()
+{
+    if (!CanKick()) return;
+    StartKickMontage();
+}
+
+void ASTUPlayerCharacter::MulticastPlayKickMontage_Implementation()
+{
+    if (!HasAuthority() && KickMontage)
+    {
+        KickAnimInProgress = true;
+        PlayAnimMontage(KickMontage);
+    }
+}
+
+void ASTUPlayerCharacter::InitKickNotify()
+{
+    if (!KickMontage) return;
+
+    if (USTUKickFinishedAnimNotify* Notify = AnimUtils::FindNotifyByClass<USTUKickFinishedAnimNotify>(KickMontage))
+    {
+        Notify->OnNotified.AddUObject(this, &ASTUPlayerCharacter::OnKickMontageFinished);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning,
+            TEXT("Kick montage '%s' has no STUKickFinishedAnimNotify — add it at the end of the montage in the editor."),
+            *GetNameSafe(KickMontage));
+    }
+}
+
+void ASTUPlayerCharacter::OnKickMontageFinished(USkeletalMeshComponent* MeshComp)
+{
+    if (!MeshComp || MeshComp != GetMesh()) return;
+    KickAnimInProgress = false;
+}
+
 void ASTUPlayerCharacter::BeginPlay()
 {
     Super::BeginPlay();
+
+    InitKickNotify();
 
     check(CameraCollisionComponent);
 
@@ -104,6 +186,7 @@ void ASTUPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
     //PlayerInputComponent->BindAction("Fire", IE_Released, WeaponComponent, &USTUWeaponComponent::StopFire);
     PlayerInputComponent->BindAction("NextWeapon", IE_Pressed, WeaponComponent, &USTUWeaponComponent::NextWeapon);
     PlayerInputComponent->BindAction("Reload", IE_Pressed, WeaponComponent, &USTUWeaponComponent::Reload);
+    PlayerInputComponent->BindAction("Kick", IE_Pressed, this, &ASTUPlayerCharacter::OnKickPressed);
 
     //DECLARE_DELEGATE_OneParam(FZoomInputSignature, bool);
     //PlayerInputComponent->BindAction<FZoomInputSignature>("Zoom", IE_Pressed, WeaponComponent, &USTUWeaponComponent::Zoom, true);
@@ -128,6 +211,11 @@ void ASTUPlayerCharacter::CheckAndJump()
 {
     if (IsRunning()) return;
     Jump();
+}
+
+void ASTUPlayerCharacter::OnKickPressed()
+{
+    TryKick();
 }
 
 void ASTUPlayerCharacter::OnStartRunning()
@@ -248,6 +336,8 @@ void ASTUPlayerCharacter::OnStaminaDepleted()
 void ASTUPlayerCharacter::OnDeath()
 {
     Super::OnDeath();
+
+    KickAnimInProgress = false;
 
     // Apply death post-process to camera
     if (CameraComponent && DeathPostProcessMaterial)
