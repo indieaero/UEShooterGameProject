@@ -9,6 +9,7 @@
 #include "Animations/AnimUtils.h"
 #include "Net/UnrealNetwork.h"
 #include "EngineUtils.h"
+#include "Player/STUPlayerCharacter.h"
 
 DEFINE_LOG_CATEGORY_STATIC(logWeaponComponent, All, All)
 
@@ -284,7 +285,12 @@ void USTUWeaponComponent::OnReloadFinished(USkeletalMeshComponent* MeshComp)
 bool USTUWeaponComponent::CanFire() const
 {
     const auto Player = Cast<ASTUBaseCharacter>(GetOwner());
-    return CurrentWeapon && !Player->IsRunning() && !EquipAnimInProgress && !ReloadAnimInProgress;
+    if (!Player) return false;
+
+    const auto PlayerCharacter = Cast<ASTUPlayerCharacter>(Player);
+    const bool bKickInProgress = PlayerCharacter && PlayerCharacter->IsKickInProgress();
+
+    return CurrentWeapon && !Player->IsRunning() && !EquipAnimInProgress && !ReloadAnimInProgress && !bKickInProgress;
 }
 
 bool USTUWeaponComponent::CanEquip() const

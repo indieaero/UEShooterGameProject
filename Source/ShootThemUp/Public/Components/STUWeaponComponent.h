@@ -22,6 +22,7 @@ public:
     void StopFire();
     virtual void NextWeapon();
     void Reload();
+    bool IsBusy() const { return EquipAnimInProgress || ReloadAnimInProgress; }
 
     // Server functions
     UFUNCTION(Server, Reliable)

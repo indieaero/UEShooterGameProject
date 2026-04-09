@@ -61,6 +61,7 @@ bool ASTUPlayerCharacter::CanKick() const
 
     if (!Move->IsMovingOnGround()) return false;
     if (IsRunning()) return false;
+    if (WeaponComponent && WeaponComponent->IsBusy()) return false;
 
     const float Speed2D = FVector(GetVelocity().X, GetVelocity().Y, 0.0f).Size();
     return Speed2D <= KickIdleHorizontalSpeedThreshold;
@@ -82,6 +83,11 @@ void ASTUPlayerCharacter::TryKick()
 
 void ASTUPlayerCharacter::StartKickMontage()
 {
+    if (WeaponComponent)
+    {
+        WeaponComponent->StopFire();
+    }
+
     KickAnimInProgress = true;
     PlayAnimMontage(KickMontage);
     MulticastPlayKickMontage();

@@ -27,6 +27,9 @@ public:
     bool CanKick() const;
 
     UFUNCTION(BlueprintCallable, Category = "Animation")
+    bool IsKickInProgress() const { return KickAnimInProgress; }
+
+    UFUNCTION(BlueprintCallable, Category = "Animation")
     void TryKick();
 
     // Server functions
