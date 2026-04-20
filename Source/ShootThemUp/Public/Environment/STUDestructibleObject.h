@@ -26,6 +26,18 @@ public:
     virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
         AActor* DamageCauser) override;
 
+    UFUNCTION(BlueprintPure, Category = "Destruction")
+    float GetHealth() const
+    {
+        return Health;
+    }
+
+    UFUNCTION(BlueprintPure, Category = "Destruction")
+    bool IsDestroyed() const
+    {
+        return bIsDestroyed;
+    }
+
     /** Call from Blueprint to trigger destruction at custom position (e.g. overlap, custom logic) */
     UFUNCTION(BlueprintCallable, Category = "Destruction")
     void TriggerDestructionAt(FVector Location);
@@ -44,10 +56,10 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Destruction")
     float MaxHealth = 100.0f;
 
-    UPROPERTY(ReplicatedUsing = OnRep_Health)
+    UPROPERTY(ReplicatedUsing = OnRep_Health, BlueprintReadOnly, Category = "Destruction")
     float Health = 100.0f;
 
-    UPROPERTY(ReplicatedUsing = OnRep_IsDestroyed)
+    UPROPERTY(ReplicatedUsing = OnRep_IsDestroyed, BlueprintReadOnly, Category = "Destruction")
     bool bIsDestroyed = false;
 
     /** Strain field radius - must cover the entire Geometry Collection */
