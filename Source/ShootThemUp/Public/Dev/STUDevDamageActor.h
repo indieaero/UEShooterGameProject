@@ -35,6 +35,10 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TSubclassOf<UDamageType> DamageType;
 
+    //Server only
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
+    bool bDrawDebug = true;
+
 protected:
 	// Called when the game starts or when spawned
     virtual void BeginPlay() override;

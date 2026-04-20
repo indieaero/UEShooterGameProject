@@ -27,7 +27,16 @@ void ASTUDevDamageActor::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 
-    DrawDebugSphere(GetWorld(), GetActorLocation(), Radius, 24, SphereColor);
+    
+    if (!HasAuthority())
+    {
+        return;
+    }
+
+    if (bDrawDebug)
+    {
+        DrawDebugSphere(GetWorld(), GetActorLocation(), Radius, 24, SphereColor);
+    }
 
     //Call function from GameplayStatics that apply damage to all actors every tick
     UGameplayStatics::ApplyRadialDamage(GetWorld(), Damage, GetActorLocation(), Radius, 
