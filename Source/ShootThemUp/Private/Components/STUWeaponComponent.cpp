@@ -10,6 +10,8 @@
 #include "Net/UnrealNetwork.h"
 #include "EngineUtils.h"
 #include "Player/STUPlayerCharacter.h"
+#include "GameFramework/PlayerController.h"
+#include "Camera/PlayerCameraManager.h"
 
 DEFINE_LOG_CATEGORY_STATIC(logWeaponComponent, All, All)
 
@@ -93,6 +95,26 @@ void USTUWeaponComponent::OnRep_CurrentWeaponIndex()
     {
         CurrentWeapon = Weapons[CurrentWeaponIndex];
     }
+    ResetLocalZoomAndAiming();
+}
+
+void USTUWeaponComponent::ResetLocalZoomAndAiming()
+{
+    ACharacter* Character = Cast<ACharacter>(GetOwner());
+    if (!Character || !Character->IsLocallyControlled()) return;
+
+    if (APlayerController* PC = Character->GetController<APlayerController>())
+    {
+        if (APlayerCameraManager* PCM = PC->PlayerCameraManager)
+        {
+            PCM->SetFOV(PCM->DefaultFOV);
+        }
+    }
+
+    if (ASTUPlayerCharacter* PlayerChar = Cast<ASTUPlayerCharacter>(Character))
+    {
+        PlayerChar->OnZoomStateChanged(false);
+    }
 }
 
 void USTUWeaponComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -175,6 +197,11 @@ void USTUWeaponComponent::EquipWeapon(int32 WeaponIndex)
 
     PlayAnimMontage(EquipAnimMontage);
     MulticastPlayEquipAnim();
+
+    if (Character->IsLocallyControlled())
+    {
+        ResetLocalZoomAndAiming();
+    }
 }
 
 void USTUWeaponComponent::StartFire()

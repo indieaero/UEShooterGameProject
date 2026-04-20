@@ -103,4 +103,7 @@ private:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
     void DiscoverReplicatedWeapons();
+
+    //Locally reset ADS FOV / zoom )
+    void ResetLocalZoomAndAiming();
 };
