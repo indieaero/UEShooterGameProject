@@ -174,7 +174,11 @@ void ASTUGameModeBase::CreateTeamsInfo()
 
         PlayerState->SetTeamID(TeamID);
         PlayerState->SetTeamColor(DetermineColorByTeamID(TeamID));
-        PlayerState->SetPlayerName(Controller->IsPlayerController() ? "Player" : "Bot");
+        // Human display name is set by the owning client via ASTUPlayerController::ServerSetPlayerDisplayName (pending name from USTUGameInstance).
+        if (!Controller->IsPlayerController())
+        {
+            PlayerState->SetPlayerName(TEXT("Bot"));
+        }
         SetPlayerColor(Controller);
 
         TeamID = TeamID == 1 ? 2 : 1;  // Toggle between two teams

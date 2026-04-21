@@ -14,6 +14,7 @@ class UMaterialInterface;
 class UAudioComponent;
 class UAnimMontage;
 class USkeletalMeshComponent;
+class UTextRenderComponent;
 
 UCLASS()
 class SHOOTTHEMUP_API ASTUPlayerCharacter : public ASTUBaseCharacter
@@ -58,6 +59,9 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
     USTUStaminaComponent* StaminaComponent;
 
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+    UTextRenderComponent* DisplayNameText;
+
     // Post-process material (e.g. M_RunBlur_Inst) applied to camera when running 
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "VFX")
     UMaterialInterface* RunBlurMaterial;
@@ -72,6 +76,14 @@ protected:
     // Max horizontal speed (cm/s) on ground to count as "standing" for kick. 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation", meta = (ClampMin = "0.0"))
     float KickIdleHorizontalSpeedThreshold = 15.0f;
+
+    /** Extra Z offset from capsule center for the nameplate (cm). */
+    UPROPERTY(EditDefaultsOnly, Category = "UI")
+    float DisplayNameVerticalOffset = 95.0f;
+
+    /** World-space text size for the nameplate. */
+    UPROPERTY(EditDefaultsOnly, Category = "UI", meta = (ClampMin = "1.0"))
+    float DisplayNameWorldSize = 32.0f;
 
     virtual void OnDeath() override;
     virtual void BeginPlay() override;
@@ -119,9 +131,13 @@ private:
 
     void UpdateRunningSounds();
 
+    void UpdateDisplayNameplate();
+
     UPROPERTY()
     UAudioComponent* RunningVoiceComponent = nullptr;
 
     UPROPERTY()
     UAudioComponent* TiredVoiceComponent = nullptr;
+
+    FString CachedDisplayName;
 };

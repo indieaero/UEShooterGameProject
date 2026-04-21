@@ -3,8 +3,10 @@
 #include "Player/STUPlayerCharacter.h"
 #include "Camera/CameraComponent.h"
 #include "Components/AudioComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/STUHealthComponent.h"
+#include "Components/TextRenderComponent.h"
 #include "Components/STUStaminaComponent.h"
 #include "Engine/Scene.h"
 #include "GameFramework/Controller.h"
@@ -13,8 +15,8 @@
 #include "Materials/MaterialInterface.h"
 #include "Components/STUWeaponComponent.h"
 #include "Components/SphereComponent.h"
-#include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/PlayerState.h"
 #include "Net/UnrealNetwork.h"
 #include "Sound/SoundCue.h"
 #include "Animation/AnimMontage.h"
@@ -41,6 +43,18 @@ ASTUPlayerCharacter::ASTUPlayerCharacter(const FObjectInitializer& ObjInit) : Su
     CameraCollisionComponent->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
 
     StaminaComponent = CreateDefaultSubobject<USTUStaminaComponent>("StaminaComponent");
+
+    DisplayNameText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("DisplayNameText"));
+    DisplayNameText->SetupAttachment(GetRootComponent());
+    DisplayNameText->SetHorizontalAlignment(EHTA_Center);
+    DisplayNameText->SetVerticalAlignment(EVRTA_TextCenter);
+    DisplayNameText->SetTextRenderColor(FColor::White);
+    DisplayNameText->SetWorldSize(32.0f);
+    DisplayNameText->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    DisplayNameText->SetCastShadow(false);
+    DisplayNameText->bAffectDynamicIndirectLighting = false;
+    // Hide only for the owning player (works with Listen Server + multi-PIE where IsLocallyControlled is unreliable for "other" views).
+    DisplayNameText->SetOwnerNoSee(true);
 }
 
 void ASTUPlayerCharacter::ServerSetRunning_Implementation(bool bNewRunning)
@@ -144,6 +158,20 @@ void ASTUPlayerCharacter::BeginPlay()
     if (StaminaComponent)
     {
         StaminaComponent->OnStaminaDepleted.AddUObject(this, &ASTUPlayerCharacter::OnStaminaDepleted);
+    }
+
+    if (DisplayNameText)
+    {
+        if (GetNetMode() == NM_DedicatedServer)
+        {
+            DisplayNameText->SetHiddenInGame(true);
+        }
+        else if (GetCapsuleComponent())
+        {
+            DisplayNameText->SetWorldSize(DisplayNameWorldSize);
+            const float Z = GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + DisplayNameVerticalOffset;
+            DisplayNameText->SetRelativeLocation(FVector(0.0f, 0.0f, Z));
+        }
     }
 
     // Add run blur post-process to camera
@@ -256,6 +284,8 @@ void ASTUPlayerCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 
+    UpdateDisplayNameplate();
+
     // Update run blur post-process weight
     if (CameraComponent && RunBlurMaterial)
     {
@@ -343,6 +373,11 @@ void ASTUPlayerCharacter::OnDeath()
 {
     Super::OnDeath();
 
+    if (DisplayNameText)
+    {
+        DisplayNameText->SetHiddenInGame(true);
+    }
+
     KickAnimInProgress = false;
 
     // Apply death post-process to camera
@@ -371,6 +406,46 @@ void ASTUPlayerCharacter::OnCameraCollisionEndOverlap(
     UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
     CheckCameraOverlap();
+}
+
+void ASTUPlayerCharacter::UpdateDisplayNameplate()
+{
+    if (!DisplayNameText || GetNetMode() == NM_DedicatedServer)
+    {
+        return;
+    }
+
+    if (HealthComponent && HealthComponent->IsDead())
+    {
+        DisplayNameText->SetHiddenInGame(true);
+        return;
+    }
+
+    DisplayNameText->SetHiddenInGame(false);
+
+    APlayerState* PS = GetPlayerState();
+    const FString NewName = PS ? PS->GetPlayerName() : FString();
+    if (NewName != CachedDisplayName)
+    {
+        CachedDisplayName = NewName;
+        const FString ToShow = NewName.IsEmpty() ? FString(TEXT("Player")) : NewName;
+        DisplayNameText->SetText(FText::FromString(ToShow));
+    }
+
+    if (UWorld* World = GetWorld())
+    {
+        if (APlayerController* PC = World->GetFirstPlayerController())
+        {
+            FVector CamLocation;
+            FRotator CamRotation;
+            PC->GetPlayerViewPoint(CamLocation, CamRotation);
+            const FVector ToCamera = CamLocation - DisplayNameText->GetComponentLocation();
+            if (!ToCamera.IsNearlyZero())
+            {
+                DisplayNameText->SetWorldRotation(ToCamera.Rotation());
+            }
+        }
+    }
 }
 
 void ASTUPlayerCharacter::CheckCameraOverlap()

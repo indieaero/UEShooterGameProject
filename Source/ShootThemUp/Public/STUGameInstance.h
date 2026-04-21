@@ -15,6 +15,9 @@ class SHOOTTHEMUP_API USTUGameInstance : public UGameInstance
     GENERATED_BODY()
 
 public:
+    /** Console: SetPlayerName <nickname> — registered globally (see .cpp). */
+    static void ConsoleSetPlayerName(const TArray<FString>& Args, UWorld* World);
+
     FLevelData GetStartUpLevel() const { return StartUpLevel; }
     void SetStartUpLevel(const FLevelData& LevelData) { StartUpLevel = LevelData; }
 
@@ -23,6 +26,14 @@ public:
     FName GetMenuLevelName() const { return MenuLevelName; }
 
     void ToggleVolume();
+
+    /** Nickname used when connecting to a server (set via SetPlayerName console command). */
+    const FString& GetPendingPlayerDisplayName() const { return PendingPlayerDisplayName; }
+
+    void SetPendingPlayerDisplayName(const FString& Name);
+
+    /** If the local player uses ASTUPlayerController, push the pending name to the server. */
+    void TryApplyPendingDisplayName(UWorld* World);
 
 protected:
     UPROPERTY(EditDefaultsOnly, Category = "Game", meta = (ToolTip = "Level names must me unique!"))
@@ -36,4 +47,6 @@ protected:
 
 private:
     FLevelData StartUpLevel;
+
+    FString PendingPlayerDisplayName;
 };

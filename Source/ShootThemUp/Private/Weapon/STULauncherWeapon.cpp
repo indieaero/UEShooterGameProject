@@ -11,6 +11,14 @@ void ASTULauncherWeapon::StartFire()
     MakeShot();
 }
 
+void ASTULauncherWeapon::PlayEmptyAmmoLocalFeedback()
+{
+    const APawn* OwnerPawn = Cast<APawn>(GetOwner());
+    if (!OwnerPawn || !OwnerPawn->IsLocallyControlled() || !NoAmmoSound || !WeaponMesh || !GetWorld()) return;
+
+    UGameplayStatics::SpawnSoundAttached(NoAmmoSound, WeaponMesh, MuzzleSocketName);
+}
+
 void ASTULauncherWeapon::MakeShot()
 {
     if (!HasAuthority()) return;  // Server: spawn projectile and ammo; MulticastPlayFireFX for clients
@@ -18,7 +26,7 @@ void ASTULauncherWeapon::MakeShot()
 
     if (IsAmmoEmpty())
     {
-        UGameplayStatics::SpawnSoundAtLocation(GetWorld(), NoAmmoSound, GetActorLocation());
+        PlayEmptyAmmoLocalFeedback();
         return;
     }
 

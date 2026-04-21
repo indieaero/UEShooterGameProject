@@ -11,6 +11,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 #include "Net/UnrealNetwork.h"
+#include "Pickups/STUBasePickup.h"
 
 // TODO: read about define log category
 DEFINE_LOG_CATEGORY_STATIC(LogBaseCharacter, All, All);
@@ -25,6 +26,13 @@ ASTUBaseCharacter::ASTUBaseCharacter(const FObjectInitializer& ObjInit)
 
     HealthComponent = CreateDefaultSubobject<USTUHealthComponent>("HealthComponent");
     WeaponComponent = CreateDefaultSubobject<USTUWeaponComponent>("WeaponComponent");
+
+    // WorldDynamic pickups use overlap; default capsule blocks WorldDynamic so BeginOverlap never fires.
+    // Projectiles use ECC_GameTraceChannel1 (Enemy) so they still block against the capsule.
+    if (UCapsuleComponent* Capsule = GetCapsuleComponent())
+    {
+        Capsule->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Overlap);
+    }
 }
 
 // Called when the game starts or when spawned
@@ -134,15 +142,21 @@ void ASTUBaseCharacter::OnRep_TeamColor()
 
 void ASTUBaseCharacter::OnHealthChanged(float Health, float HealthDelta)
 {
-    // Play hit pain voice only for real damage ticks and only while alive.
-    if (HasAuthority() && HealthDelta < 0.0f && Health > 0.0f)
+    // Hit pain is played from USTUHealthComponent::ApplyDamage (TryPlayDamageHitPainSound) so healing/pickups never trigger it.
+}
+
+void ASTUBaseCharacter::TryPlayDamageHitPainSound()
+{
+    if (!HasAuthority())
     {
-        const float CurrentTime = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0f;
-        if (CurrentTime - LastPlayerHitPainSoundTime >= PlayerHitPainSoundCooldown)
-        {
-            LastPlayerHitPainSoundTime = CurrentTime;
-            MulticastPlayPlayerHitPainSound();
-        }
+        return;
+    }
+
+    const float CurrentTime = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0f;
+    if (CurrentTime - LastPlayerHitPainSoundTime >= PlayerHitPainSoundCooldown)
+    {
+        LastPlayerHitPainSoundTime = CurrentTime;
+        MulticastPlayPlayerHitPainSound();
     }
 }
 
@@ -257,4 +271,23 @@ void ASTUBaseCharacter::OnDeath()
     }
 
     UGameplayStatics::PlaySoundAtLocation(GetWorld(), DeathBodySound, GetActorLocation());
+}
+
+bool ASTUBaseCharacter::ServerTryPickupActor_Validate(AActor* PickupActor)
+{
+    return PickupActor != nullptr;
+}
+
+void ASTUBaseCharacter::ServerTryPickupActor_Implementation(AActor* PickupActor)
+{
+    ASTUBasePickup* Pickup = Cast<ASTUBasePickup>(PickupActor);
+    if (!Pickup || !GetWorld()) return;
+
+    static constexpr float MaxUseDistCm = 400.f;
+    if (FVector::DistSquared(GetActorLocation(), Pickup->GetActorLocation()) > FMath::Square(MaxUseDistCm))
+    {
+        return;
+    }
+
+    Pickup->AuthorityTryGiveToPawn(this);
 }

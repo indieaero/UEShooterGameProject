@@ -3,6 +3,7 @@
 #include "Components/STUWeaponComponent.h"
 #include "Weapon/STUBaseWeapon.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/Pawn.h"
 #include "STUBaseCharacter.h"
 #include "Animations/STUEquipFinishedAnimNotify.h"
 #include "Animations/STUReloadFinishedAnimNotify.h"
@@ -208,6 +209,11 @@ void USTUWeaponComponent::StartFire()
 {
     if (GetOwner() && GetOwner()->GetLocalRole() < ROLE_Authority)  // Client: request server to fire
     {
+        const APawn* OwnerPawn = Cast<APawn>(GetOwner());
+        if (OwnerPawn && OwnerPawn->IsLocallyControlled() && CanFire() && CurrentWeapon && CurrentWeapon->IsAmmoEmpty())
+        {
+            CurrentWeapon->PlayEmptyAmmoLocalFeedback();
+        }
         ServerStartFire();
         return;
     }
@@ -422,11 +428,24 @@ bool USTUWeaponComponent::GetCurrentWeaponAmmoData(FAmmoData& AmmoData) const
 
 bool USTUWeaponComponent::TryToAddAmmo(TSubclassOf<ASTUBaseWeapon> WeaponType, int32 ClipsAmount)
 {
+    if (!WeaponType) return false;
     for (const auto Weapon: Weapons)
     {
         if (Weapon && Weapon->IsA(WeaponType))
         {
             return Weapon->TryToAddAmmo(ClipsAmount);
+        }
+    }
+    return false;
+}
+
+bool USTUWeaponComponent::TryToAddAmmoToAnyCompatibleWeapon(int32 ClipsAmount)
+{
+    for (const auto Weapon : Weapons)
+    {
+        if (Weapon && Weapon->TryToAddAmmo(ClipsAmount))
+        {
+            return true;
         }
     }
     return false;

@@ -4,12 +4,31 @@
 #include "Components/STURespawnComponent.h"
 #include "STUGameStateBase.h"
 #include "STUGameInstance.h"
+#include "STULocalPlayerPendingDisplayNameSubsystem.h"
+#include "Engine/LocalPlayer.h"
+#include "GameFramework/PlayerState.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/STUPlayerCharacter.h"
 #include "Player/STUBaseCharacter.h"
 #include "Components/STUHealthComponent.h"
 #include "Components/STUWeaponComponent.h"
 #include "STUUtils.h"
+
+namespace STUPlayerDisplayName
+{
+    static constexpr int32 MaxLen = 48;
+
+    static void Sanitize(FString& InOut)
+    {
+        InOut.TrimStartAndEndInline();
+        InOut.ReplaceInline(TEXT("\r"), TEXT(""), ESearchCase::CaseSensitive);
+        InOut.ReplaceInline(TEXT("\n"), TEXT(" "), ESearchCase::CaseSensitive);
+        if (InOut.Len() > MaxLen)
+        {
+            InOut.LeftInline(MaxLen);
+        }
+    }
+}  // namespace STUPlayerDisplayName
 
 ASTUPlayerController::ASTUPlayerController()
 {
@@ -36,6 +55,8 @@ void ASTUPlayerController::BeginPlay()
             GameState->OnMatchStateChanged.AddUObject(this, &ASTUPlayerController::OnMatchStateChanged);
         }
     }
+
+    ApplyPendingDisplayNameFromSettings();
 }
 
 void ASTUPlayerController::OnMatchStateChanged(ESTUMatchState State)
@@ -116,6 +137,54 @@ void ASTUPlayerController::ServerSetPause_Implementation()
 {
     if (!GetWorld() || !GetWorld()->GetAuthGameMode()) return;
     GetWorld()->GetAuthGameMode()->SetPause(this);
+}
+
+void ASTUPlayerController::ApplyPendingDisplayNameFromSettings()
+{
+    // Only the owning client (or listen-server host) has the pending name in USTUGameInstance; the server copy must not push "Player" over the RPC.
+    if (!IsLocalController())
+    {
+        return;
+    }
+
+    FString Name;
+    if (const ULocalPlayer* LP = GetLocalPlayer())
+    {
+        if (const USTULocalPlayerPendingDisplayNameSubsystem* Sub = LP->GetSubsystem<USTULocalPlayerPendingDisplayNameSubsystem>())
+        {
+            if (!Sub->GetPendingDisplayName().IsEmpty())
+            {
+                Name = Sub->GetPendingDisplayName();
+            }
+        }
+    }
+
+    if (Name.IsEmpty())
+    {
+        const USTUGameInstance* GI = GetGameInstance<USTUGameInstance>();
+        Name = (GI && !GI->GetPendingPlayerDisplayName().IsEmpty()) ? GI->GetPendingPlayerDisplayName() : TEXT("Player");
+    }
+    STUPlayerDisplayName::Sanitize(Name);
+    if (Name.IsEmpty())
+    {
+        Name = TEXT("Player");
+    }
+    ServerSetPlayerDisplayName(Name);
+}
+
+void ASTUPlayerController::ServerSetPlayerDisplayName_Implementation(const FString& Name)
+{
+    FString Sanitized = Name;
+    STUPlayerDisplayName::Sanitize(Sanitized);
+    if (Sanitized.IsEmpty())
+    {
+        Sanitized = TEXT("Player");
+    }
+
+    if (APlayerState* PS = PlayerState)
+    {
+        PS->SetPlayerName(Sanitized);
+    }
 }
 
 void ASTUPlayerController::SpectateNext()

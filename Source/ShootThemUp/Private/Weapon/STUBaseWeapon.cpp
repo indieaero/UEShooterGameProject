@@ -56,6 +56,10 @@ void ASTUBaseWeapon::StopFire()
 
 }
 
+void ASTUBaseWeapon::PlayEmptyAmmoLocalFeedback()
+{
+}
+
 void ASTUBaseWeapon::MakeShot()
 {
 

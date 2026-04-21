@@ -3,11 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Engine/EngineTypes.h"
 #include "GameFramework/Actor.h"
 #include "STUBasePickup.generated.h"
 
 class USphereComponent;
 class USoundCue;
+class UPrimitiveComponent;
 
 UCLASS()
 class SHOOTTHEMUP_API ASTUBasePickup : public AActor
@@ -16,6 +18,9 @@ class SHOOTTHEMUP_API ASTUBasePickup : public AActor
 
 public:
     ASTUBasePickup();
+
+    /** Server only: grant pickup if still available (used from server overlap or client RPC). */
+    void AuthorityTryGiveToPawn(APawn* Pawn);
 
 protected:
     UPROPERTY(VisibleAnywhere, Category = "Pickup")
@@ -28,7 +33,7 @@ protected:
     USoundCue* PickupTakenSound;
 
     virtual void BeginPlay() override;
-    virtual void NotifyActorBeginOverlap(AActor* OtherActor) override;
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:
     virtual void Tick(float DeltaTime) override;
@@ -42,6 +47,10 @@ protected:
 
     UFUNCTION()
     void OnRep_PickupTaken();
+
+    UFUNCTION()
+    void OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+        int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 private:
     float RotationYaw = 0.0f;

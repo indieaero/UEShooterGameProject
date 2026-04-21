@@ -23,6 +23,9 @@ public:
     UFUNCTION(Server, Reliable)
     void ServerSetPause();
 
+    /** Sends pending display name from USTUGameInstance (or default) to the server. */
+    void ApplyPendingDisplayNameFromSettings();
+
     // Cycle between players while spectating. Can also be called from BP/UI
     UFUNCTION(BlueprintCallable, Category = "Spectator")
     void SpectateNext();
@@ -68,6 +71,9 @@ private:
 
     UFUNCTION(Server, Reliable)
     void ServerSpectatePrev();
+
+    UFUNCTION(Server, Reliable)
+    void ServerSetPlayerDisplayName(const FString& Name);
 
     void SpectateOffset(int32 Offset);
 

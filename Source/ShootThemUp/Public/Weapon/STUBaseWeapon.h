@@ -35,6 +35,9 @@ public:
     bool IsAmmoEmpty() const;
     bool IsAmmoFull() const;
 
+    /** Dry-fire feedback for the owning/local player (replicated ammo is known on clients). */
+    virtual void PlayEmptyAmmoLocalFeedback();
+
     virtual void Zoom(bool IsEnabled) {}
 
 protected:

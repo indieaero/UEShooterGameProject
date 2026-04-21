@@ -15,5 +15,9 @@ bool ASTUAmmoPickup::GivePickupTo(APawn* PlayerPawn)
     const auto WeaponComponent = STUUtils::GetSTUPlayerComponent<USTUWeaponComponent>(PlayerPawn);
     if (!WeaponComponent) return false;
 
-    return WeaponComponent->TryToAddAmmo(WeaponType, ClipsAmount);
+    if (WeaponType)
+    {
+        return WeaponComponent->TryToAddAmmo(WeaponType, ClipsAmount);
+    }
+    return WeaponComponent->TryToAddAmmoToAnyCompatibleWeapon(ClipsAmount);
 }

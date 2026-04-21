@@ -85,6 +85,9 @@ public:
 
     void PlayPlayerReloadSound();
 
+    /** Server only: multicast hit pain with cooldown. Call from USTUHealthComponent::ApplyDamage only so healing/replication never trigger it. */
+    void TryPlayDamageHitPainSound();
+
     void SetPlayerColor(const FLinearColor& Color);
 
     /** Aim rotation; for remote pawns uses replicated value so weapon pose is correct in multiplayer. */
@@ -96,6 +99,9 @@ public:
 
     UFUNCTION(Server, Unreliable)
     void ServerUpdateViewRotation(FRotator NewRotation);
+
+    UFUNCTION(Server, Reliable, WithValidation)
+    void ServerTryPickupActor(AActor* PickupActor);
 
     // Client RPC
     UFUNCTION(Client, Reliable)

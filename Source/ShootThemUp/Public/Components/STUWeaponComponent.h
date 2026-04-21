@@ -43,6 +43,8 @@ public:
     bool GetCurrentWeaponAmmoData(FAmmoData& AmmoData) const;
 
     bool TryToAddAmmo(TSubclassOf<ASTUBaseWeapon> WeaponType, int32 ClipsAmount);
+    /** Server: add clips to the first weapon that accepts them (used when pickup has no WeaponType). */
+    bool TryToAddAmmoToAnyCompatibleWeapon(int32 ClipsAmount);
     bool NeedAmmo(TSubclassOf<ASTUBaseWeapon> WeaponType);
 
     void Zoom(bool IsEnabled);

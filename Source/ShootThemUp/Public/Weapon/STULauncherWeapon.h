@@ -17,6 +17,7 @@ class SHOOTTHEMUP_API ASTULauncherWeapon : public ASTUBaseWeapon
 
 public:
 	virtual void StartFire() override;
+	virtual void PlayEmptyAmmoLocalFeedback() override;
 
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastPlayFireFX();

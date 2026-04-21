@@ -2,6 +2,7 @@
 
 #include "Weapon/STUProjectile.h"
 #include "Components/SphereComponent.h"
+#include "Engine/EngineTypes.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "DrawDebugHelpers.h"
 #include "Kismet/GameplayStatics.h"
@@ -20,6 +21,7 @@ ASTUProjectile::ASTUProjectile()
     SetRootComponent(CollisionComponent);
 
     CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+    CollisionComponent->SetCollisionObjectType(ECC_GameTraceChannel1);  // "Enemy" in DefaultEngine.ini — not WorldDynamic (pickups)
     CollisionComponent->SetCollisionResponseToAllChannels(ECR_Block);
     CollisionComponent->bReturnMaterialOnMove = true;
     SetRootComponent(CollisionComponent);

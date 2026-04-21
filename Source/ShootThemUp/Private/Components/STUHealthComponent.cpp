@@ -176,6 +176,10 @@ void USTUHealthComponent::ApplyDamage(float Damage, AController* InstigatedBy)
     // NotifyClientDamageTaken() → shake + OnClientDamageTaken (HUD)
     if (ASTUBaseCharacter* OwnerCharacter = Cast<ASTUBaseCharacter>(GetOwner()))
     {
+        if (!IsDead())
+        {
+            OwnerCharacter->TryPlayDamageHitPainSound();
+        }
         OwnerCharacter->ClientOnDamageTaken();
     }
 
