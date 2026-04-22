@@ -37,6 +37,13 @@ ASTUPlayerController::ASTUPlayerController()
 
 void ASTUPlayerController::ClientStartRespawnTimer_Implementation(int32 RespawnTime) 
 {
+    // Safety guard: in standalone/listen-host this controller can be authority+local.
+    // Starting timer here would re-enter server path and recurse through RPC thunk.
+    if (HasAuthority())
+    {
+        return;
+    }
+
     if (RespawnComponent)
     {
         RespawnComponent->Respawn(RespawnTime);

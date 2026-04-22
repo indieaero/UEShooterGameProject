@@ -4,7 +4,6 @@
 #include "Player/STUPlayerController.h"
 #include "STUGameModeBase.h"
 #include "Engine/World.h"
-#include "Kismet/GameplayStatics.h"
 
 USTURespawnComponent::USTURespawnComponent()
 {
@@ -18,15 +17,13 @@ void USTURespawnComponent::Respawn(int32 RespawnTime)
     RespawnCountDown = RespawnTime;
     GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, this, &USTURespawnComponent::RespawnTimerUpdate, 1.0f, true);
 
-    // Server notifies client to run countdown locally (except listen server host who already has timer)
+    // Server notifies only remote owning client to run countdown locally.
+    // Standalone and listen-server host are local+authority and should not receive this RPC.
     if (GetOwner() && GetOwner()->HasAuthority())
     {
-        const bool bIsListenServerHost =
-            (GetWorld()->GetNetMode() == NM_ListenServer) && (GetOwner() == UGameplayStatics::GetPlayerController(GetWorld(), 0));
-
-        if (!bIsListenServerHost)
+        if (auto* PC = Cast<ASTUPlayerController>(GetOwner()))
         {
-            if (auto* PC = Cast<ASTUPlayerController>(GetOwner()))
+            if (!PC->IsLocalController())
             {
                 PC->ClientStartRespawnTimer(RespawnTime);
             }

@@ -62,6 +62,10 @@ protected:
     UPROPERTY(ReplicatedUsing = OnRep_IsDestroyed, BlueprintReadOnly, Category = "Destruction")
     bool bIsDestroyed = false;
 
+    /** Authoritative position selected on server and replicated for deterministic client destruction. */
+    UPROPERTY(Replicated, BlueprintReadOnly, Category = "Destruction")
+    FVector_NetQuantize DestructionFieldPosition = FVector::ZeroVector;
+
     /** Strain field radius - must cover the entire Geometry Collection */
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Destruction", meta = (ClampMin = "1.0"))
     float StrainRadius = 200.0f;
@@ -78,16 +82,34 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Destruction")
     bool bUseLastHitPoint = false;
 
+    /** Apply additional physical impulse at impact point for clearer projectile-like reaction. */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Destruction")
+    bool bUseImpactImpulse = true;
+
+    /** Impulse strength for first break event. */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Destruction", meta = (ClampMin = "0.0"))
+    float BreakImpactImpulseStrength = 1200.0f;
+
+    /** Impulse strength for post-break extra hits. */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Destruction", meta = (ClampMin = "0.0"))
+    float PostBreakImpactImpulseStrength = 600.0f;
+
+    /** Server batches post-break hits into one multicast per time window. */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Destruction|Network", meta = (ClampMin = "0.01", ClampMax = "0.5"))
+    float PostBreakBatchWindow = 0.06f;
+
     UFUNCTION()
     void OnRep_Health();
 
     UFUNCTION()
     void OnRep_IsDestroyed();
 
-    UFUNCTION(NetMulticast, Reliable)
-    void MulticastApplyDestruction(FVector_NetQuantize FieldPosition);
-
     void ApplyDestructionField(FVector FieldPosition);
+    void ApplyPostBreakStrain(FVector FieldPosition, float MagnitudeScale);
+    void ApplyImpactImpulse(FVector ImpactPoint, float ImpulseStrength);
+
+    UFUNCTION(NetMulticast, Reliable)
+    void MulticastPostBreakStrain(FVector_NetQuantize FieldPosition, float MagnitudeScale);
 
     /** Override in Blueprint for VFX, sound, etc. */
     UFUNCTION(BlueprintNativeEvent)
@@ -97,7 +119,13 @@ protected:
 private:
     void CheckAndTriggerDestruction();
     FVector GetDestructionFieldPosition() const;
+    void QueuePostBreakStrain(FVector ImpactPosition, float MagnitudeScale);
+    void FlushQueuedPostBreakStrain();
 
     FVector LastDamageImpactPoint;
     bool bDestructionApplied = false;
+    FTimerHandle PostBreakBatchTimerHandle;
+    FVector PendingPostBreakImpactSum = FVector::ZeroVector;
+    int32 PendingPostBreakHitCount = 0;
+    float PendingPostBreakMagnitudeScale = 0.0f;
 };
